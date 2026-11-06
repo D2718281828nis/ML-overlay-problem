@@ -126,6 +126,16 @@ ol.take{padding-left:20px;max-width:78ch} ol.take li{margin:8px 0}
 .fixed{font-size:13px;margin-top:8px;color:var(--good)}
 .how code{font-size:.84em}
 .langSeg button{padding:5px 9px;font-size:12.5px}
+.designer{display:grid;grid-template-columns:300px 1fr 290px;gap:16px;align-items:start}
+@media(max-width:1100px){.designer{grid-template-columns:300px 1fr}.designer>.card:last-child{grid-column:1/-1}}
+@media(max-width:760px){.designer{grid-template-columns:1fr}}
+.hint{font-size:12.5px;color:var(--muted)}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:14px;cursor:pointer}
+.btn{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:9px;padding:8px 13px;font-size:13.5px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.cli{display:block;margin-top:4px;padding:8px 10px;background:var(--surface-2);border-radius:8px;white-space:pre-wrap;word-break:break-word;color:var(--text)}
+table.compact td,table.compact th{padding:5px 6px;font-size:12.5px}
+.seg button:disabled{opacity:.4;cursor:not-allowed}
 footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px solid var(--border)}
 </style>
 <body>
@@ -133,6 +143,7 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
   <span class="brand">Overlay Lab</span>
   <a class="l" href="#problem" data-t="nav_problem"></a>
   <a class="l" href="#trap" data-t="nav_trap"></a>
+  <a class="l" href="#designer" data-t="nav_designer"></a>
   <a class="l" href="#lab" data-t="nav_lab"></a>
   <a class="l" href="#signal" data-t="nav_signal"></a>
   <a class="l" href="#distinct" data-t="nav_distinct"></a>
@@ -140,7 +151,7 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
   <a class="l" href="#repo" data-t="nav_repo"></a>
   <a class="l" href="#takeaways" data-t="nav_take"></a>
   <span class="sp"></span>
-  <div class="seg dsSeg"><button data-ds="orig" data-t="ds_orig_short"></button><button data-ds="dist" data-t="ds_dist_short"></button></div>
+  <div class="seg dsSeg"><button data-ds="orig" data-t="ds_orig_short"></button><button data-ds="dist" data-t="ds_dist_short"></button><button data-ds="custom" data-t="ds_custom_short"></button></div>
   <div class="seg langSeg"><button data-lang="en">EN</button><button data-lang="ru">RU</button></div>
   <button class="themebtn" id="themeBtn" data-t="theme"></button>
 </div></nav>
@@ -151,7 +162,7 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
   <p class="lede" data-t="hero_lede"></p>
   <div class="card dsCard">
     <div><div class="k" data-t="ds_viewing"></div><b id="dsHero"></b><div class="n" id="dsHeroNote"></div></div>
-    <div class="seg dsSeg big"><button data-ds="orig" data-t="ds_orig_long"></button><button data-ds="dist" data-t="ds_dist_long"></button></div>
+    <div class="seg dsSeg big"><button data-ds="orig" data-t="ds_orig_long"></button><button data-ds="dist" data-t="ds_dist_long"></button><button data-ds="custom" data-t="ds_custom_long"></button></div>
   </div>
 </header>
 
@@ -202,6 +213,39 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
   </div>
 </div></section>
 
+<section id="designer"><div class="wrap">
+  <h2 data-t="des_h"></h2>
+  <p class="sub" data-t="des_sub"></p>
+  <div class="designer">
+    <div class="card">
+      <h3 style="color:var(--green)" data-t="des_green"></h3>
+      <div class="seg" id="gDist"><button data-v="uniform" class="on" data-t="d_uniform"></button><button data-v="gaussian" data-t="d_gauss"></button></div>
+      <div class="ctl"><label><span data-t="des_n"></span> <b id="v_ng"></b></label><input type="range" id="s_ng" min="200" max="3000" step="25" value="1445"></div>
+      <div class="ctl" id="ctl_gs"><label><span data-t="des_gsig"></span> <b id="v_gs"></b></label><input type="range" id="s_gs" min="100" max="900" step="10" value="400"></div>
+      <h3 style="color:var(--red);margin-top:18px" data-t="des_red"></h3>
+      <div class="seg" id="rDist"><button data-v="ring" class="on" data-t="d_ring"></button><button data-v="gaussian" data-t="d_gauss"></button><button data-v="uniform" data-t="d_uniform"></button></div>
+      <div class="ctl"><label><span data-t="des_n"></span> <b id="v_nr"></b></label><input type="range" id="s_nr" min="20" max="800" step="1" value="227"></div>
+      <div class="ctl" id="ctl_R"><label><span data-t="des_R"></span> <b id="v_R"></b></label><input type="range" id="s_R" min="40" max="700" step="5" value="350"></div>
+      <div class="ctl" id="ctl_rs"><label><span id="l_rs"></span> <b id="v_rs"></b></label><input type="range" id="s_rs" min="3" max="300" step="1" value="15"></div>
+      <div class="ctl" id="ctl_c"><label><span data-t="des_center"></span> <b id="v_c"></b></label><div class="hint" data-t="des_click"></div></div>
+      <div class="ctl"><label><span data-t="des_seed"></span> <b id="v_seed"></b></label><input type="range" id="s_seed" min="1" max="200" value="42"></div>
+      <label class="chk"><input type="checkbox" id="autoRun" checked> <span data-t="des_auto"></span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn primary" id="desRun" data-t="des_run"></button><button class="btn" id="desReset" data-t="des_reset"></button></div>
+    </div>
+    <div class="card">
+      <div class="toolbar" style="margin-bottom:6px"><b style="font-size:14px" data-t="des_map"></b><span class="busy" id="desBusy"></span></div>
+      <div class="plot"><canvas id="desCanvas" style="cursor:crosshair"></canvas></div>
+      <div class="legend" id="desLegend"></div>
+      <div class="hint" style="margin-top:10px"><span data-t="des_cli"></span><br><code id="desCli" class="cli"></code></div>
+    </div>
+    <div class="card">
+      <h3 data-t="des_res"></h3>
+      <table id="desTable" class="compact"></table>
+      <button class="btn" id="desOpen" style="margin-top:12px" data-t="des_open"></button>
+    </div>
+  </div>
+</div></section>
+
 <section id="lab"><div class="wrap">
   <h2 data-t="lab_h"></h2>
   <p class="sub" data-t="lab_sub"></p>
@@ -214,7 +258,7 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
       <div class="toolbar">
         <div style="display:flex;gap:8px;flex-wrap:wrap"><div class="seg" id="viewSeg">
           <button data-v="outcome" class="on" data-t="view_outcome"></button><button data-v="truth" data-t="view_truth"></button><button data-v="score" data-t="view_score"></button>
-        </div><div class="seg" id="spaceSeg"><button data-s="xy" class="on">X–Y</button><button data-s="tsne" data-t="space_tsne"></button></div></div>
+        </div><div class="seg" id="spaceSeg"><button data-s="xy" class="on">X–Y</button><button data-s="tsne" data-t="space_tsne" id="tsneBtn"></button></div></div>
         <span class="busy" id="busy"></span>
       </div>
       <div class="plot" id="plotWrap"><canvas id="canvas"></canvas><div class="tip" id="tip"></div></div>
@@ -322,6 +366,27 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
 <script>
 /* ======================= i18n ======================= */
 const I18N={en:{
+nav_designer:"Designer",ds_custom_short:"Custom",ds_custom_long:"Custom (designer)",
+ds_hero_custom:"Custom dataset from the designer",ds_note_custom:"Generated in your browser: {desc}. Every section below follows this switch.",ds_name_custom:"Dataset: custom ({desc})",
+prob_why_custom:"You chose the distributions, so the best possible rule is known too: see “Bayes optimal” in the lab.",
+stat_note_custom:"If the class means and spreads match (for example, both uniform), global methods have nothing to work with. If red is a compact blob or a ring, density and shape models can find it.",
+sig_sub_custom:"<b>Custom dataset:</b> the neighbour statistics below show whether your red class is denser than green, sparser, or the same.",
+sig_note_custom:"If red is concentrated, its neighbour distances are shorter (dense = red). If red is spread like green, the two curves coincide and no label-free method can separate them.",
+sig_call_custom:"<b>Custom dataset:</b> pick the method that matches your generator: ring + uniform EM for a ring, Gaussian + uniform EM for a blob, k-NN density for anything concentrated. The designer's table ranks them all.",
+res_ds_custom:"(custom dataset, computed live)",res_sub_custom:"F1 of every lab method with default parameters on your custom dataset, computed in the browser (the notebook was not run on it). The dashed line is the all-red baseline ({base}).",
+d_uniform:"Uniform",d_gauss:"Gaussian",d_ring:"Ring",
+des_h:"Dataset designer",
+des_sub:"Choose how green and red points are distributed inside the original footprint, <b>click the map to place the centre</b> of the red circle or blob, and every classifier reruns on the new data. It is the same generator as <code>make_distinct_dataset.py</code>. The browser uses its own random numbers, so individual points differ from the Python output, but the distributions are identical.",
+des_green:"Green points",des_red:"Red points",des_n:"Count",des_gsig:"Spread σ (px), centred on the footprint",des_R:"Radius R (px)",des_rs_ring:"Ring width σ (px)",des_rs_gauss:"Spread σ (px)",
+des_center:"Centre (px)",des_click:"Click anywhere on the map to move it.",des_seed:"Random seed",des_auto:"Re-run classification automatically",
+des_run:"Generate & classify",des_reset:"Reset to default",des_map:"Map: click to set the centre",des_cli:"Same distributions in Python:",
+des_res:"Classification on this dataset",des_open:"Open in the lab →",des_gen:"generating…",des_cls:"classifying {i}/{n}…",des_done:"done in {s} s",
+des_th_f:"F1",des_th_l:"vs. baseline",des_lg_ring:"red circle ±2σ",des_lg_blob:"red σ and 2σ",des_lg_gblob:"green σ",des_lg_c:"centre",
+dd_red_ring:"red ring R = {R} px, σ = {s} px at ({cx}, {cy})",dd_red_gauss:"red Gaussian σ = {s} px at ({cx}, {cy})",dd_red_uniform:"uniform red",
+dd_green_uniform:"uniform green",dd_green_gauss:"green Gaussian σ = {s} px",
+note_bayes:"true model: {desc}",mn_gu:"Gaussian + uniform mixture (EM)",cmp_c:"Custom",tsne_na:"t-SNE maps are precomputed only for the original and distinct datasets",
+md_gu:"EM for <b>one Gaussian blob plus a uniform background</b>. It is the right model when red is a Gaussian blob (try “Gaussian” in the designer). It fails on a ring, because a ring is not a blob, and on the original data there is no bump to find.",
+md_bayes:"<b>Uses the true generator.</b> The posterior P(red | x) from the exact densities that generated the data (make_distinct_dataset.py or the designer). No method can beat it on average, so its F1 is the ceiling for this dataset. The drawn shape is the true one.",
 nav_problem:"Problem",nav_trap:"Baseline trap",nav_lab:"Lab",nav_signal:"Where the signal is",nav_distinct:"Distinct data",nav_results:"Notebook results",nav_repo:"Repo",nav_take:"Takeaways",
 ds_orig_short:"Original",ds_dist_short:"Distinct",theme:"Theme",computing:"computing…",red:"red",green:"green",
 hero_eyebrow:"ML-overlay-problem · case study",
@@ -362,10 +427,9 @@ tip_truth:"truth",tip_pred:"predicted",tip_score:"score",tip_wrong:"wrong",
 g_ref:"Reference",g_glob:"Global clustering",g_dens:"Density clustering",g_loc:"Local scores",g_emb:"Embedding",g_sup:"Supervised ceiling",tag_labels:"labels",
 p_seed:"Random seed",p_m:"Fuzzifier m",p_eps:"eps (std units)",p_minpts:"min_samples",p_epst:"eps (t-SNE units)",
 note_db:"{nc} clusters · {noise} noise points",note_tsne:"{nc} clusters · {noise} noise · red = cluster #{c} (picked by F1, uses labels)",
-note_ring:"EM fit: centre ({cx}, {cy}) px · R = {R} px · σ = {s} px · π<sub>red</sub> = {pi}",note_bayes:"true circle: centre (1046, 904) px · R = 350 px · σ = 15 px",
+note_ring:"EM fit: centre ({cx}, {cy}) px · R = {R} px · σ = {s} px · π<sub>red</sub> = {pi}",
 mn_base:"All red (baseline)",mn_bayes:"Bayes optimal (true model)",mn_km:"K-Means (k=2)",mn_gmm:"Gaussian Mixture (2, full)",mn_ring:"Ring + uniform mixture (EM)",mn_fcm:"Fuzzy C-Means",mn_db:"DBSCAN",mn_kdd:"k-NN density",mn_kd:"k-NN sparsity",mn_lnnd:"LNND",mn_lof:"Local Outlier Factor",mn_tsne:"t-SNE + DBSCAN",mn_sup:"k-NN classifier (LOO)",
 md_base:"Predict every point red. This is the floor every method must beat: F1 = 2p/(1+p). On the original data that is 0.239, the number many notebook methods reported.",
-md_bayes:"<b>Uses the true generator.</b> The posterior P(red | x) computed from the exact ring and uniform densities in make_distinct_dataset.py. No method can beat it on average, so its F1 (≈ 0.8) is the ceiling for the distinct data. The drawn circle is the true ring.",
 md_km:"K-Means splits the plane with one straight line between two centroids. The classes share the same centre (on the distinct data the ring is centred in the cloud), so the cut is geometric and each half holds about the same share of reds. Cluster-to-colour mapping is chosen with labels, as in the notebook.",
 md_gmm:"The README's top recommendation. EM fits two full-covariance Gaussians. Neither the original cloud nor a ring is “two blobs”, so it finds two halves of space. Ellipses show 1σ and 2σ. The F1 curve stays near the random line.",
 md_ring:"EM for a mixture of <b>a noisy circle plus a uniform background</b> over the footprint: the same model that generated the distinct data. No labels are used. A coarse grid search picks the start, then each step re-fits the circle by weighted least squares (Kåsa fit) and updates R, σ and the red share. The fitted circle and its ±2σ band are drawn. On the original data no ring exists, so it latches onto noise.",
@@ -388,7 +452,7 @@ sig_note_dist:"On the distinct data the effect <b>flips</b>: red points sit on t
 sig_call_orig:"<b>Original dataset: the simplest score wins.</b> Rank points by the distance to their k-th nearest neighbour and flag the 227 sparsest. No labels are used, and F1 is <b>0.39 at k = 10</b> and <b>0.46 at k = 5</b>. That ties or beats the notebook's supervised RBF-SVM (test F1 0.41) and is far above LNND (0.295). Try “k-NN sparsity” in the lab.",
 sig_call_dist:"<b>Distinct dataset: model the shape.</b> k-NN density uses only “red is denser” and reaches F1 ≈ 0.64 without labels. The ring + uniform EM also uses “red lies on a circle”, so it recovers the circle (centre, R, σ) and gets close to the Bayes ceiling (≈ 0.8). Try both in the lab.",
 dist_h:"A dataset with distinct distributions",
-dist_sub:"<code>make_distinct_dataset.py</code> writes <code>df_red_green_distinct.csv</code>. It keeps the original footprint and replaces only how the colours are placed: <b style=\"color:var(--green)\">green</b> is uniform, and <b style=\"color:var(--red)\">red</b> follows a circle with a Gaussian profile across it. The classes still overlap, because green also covers the ring, so even the true model can't reach F1 = 1.",
+dist_sub:"Build your own variant in the <a href=\"#designer\">designer</a>. <code>make_distinct_dataset.py</code> writes <code>df_red_green_distinct.csv</code>. It keeps the original footprint and replaces only how the colours are placed: <b style=\"color:var(--green)\">green</b> is uniform, and <b style=\"color:var(--red)\">red</b> follows a circle with a Gaussian profile across it. The classes still overlap, because green also covers the ring, so even the true model can't reach F1 = 1.",
 how_h:"How the dataset was created",
 how_body:"<ol class=\"take\" style=\"font-size:14px\"><li><b>Footprint F.</b> All locations within 45 px of any point of the original CSV. This keeps the overall placement, including the holes.</li><li><b style=\"color:var(--green)\">Green: uniform (Poisson process).</b> The count is N<sub>g</sub> ~ Poisson(1445) (it came out as 1,477). Each point is x ~ Uniform(F), so the density is flat: <code>p<sub>g</sub>(x) = 1 / |F|</code>, with |F| ≈ 1.92 M px².</li><li><b style=\"color:var(--red)\">Red: noisy circle.</b> 227 points with angle θ ~ Uniform(0, 2π) and radius r ~ Normal(R = 350, σ = 15) px, placed at x = c + r·(cos θ, sin θ), with centre c = (1046, 904). A draw that falls outside F is redrawn. Density: <code>p<sub>r</sub>(x) = N(|x − c|; R, σ²) / (2π|x − c|)</code>.</li><li><b>Optimal rule.</b> P(red | x) = π<sub>r</sub>p<sub>r</sub> / (π<sub>r</sub>p<sub>r</sub> + π<sub>g</sub>p<sub>g</sub>). On the ring this is about 0.79 (3.7 reds per green), and it falls to almost 0 a few σ away. Seed 42, so the file is reproducible.</li></ol>",
 how_fig_h:"Density profile across the circle",
@@ -422,6 +486,27 @@ take_list:"<li><b>Always report the trivial baseline.</b> On the original data �
 footer:"ML-overlay-problem · <a href=\"https://github.com/D2718281828nis/ML-overlay-problem\">GitHub</a> · <a href=\"https://colab.research.google.com/github/D2718281828nis/ML-overlay-problem/blob/main/case_study-unsupervised-overlay-problem.ipynb\">Open notebook in Colab</a> · All computations on this page run client-side on the embedded CSVs."
 },
 ru:{
+nav_designer:"Конструктор",ds_custom_short:"Свой",ds_custom_long:"Свой (конструктор)",
+ds_hero_custom:"Свой датасет из конструктора",ds_note_custom:"Сгенерирован в браузере: {desc}. Все разделы ниже следуют этому переключателю.",ds_name_custom:"Датасет: свой ({desc})",
+prob_why_custom:"Распределения выбрали вы, поэтому известно и лучшее возможное правило: см. «Байесовский оптимум» в лаборатории.",
+stat_note_custom:"Если средние и разброс у классов совпадают (например, оба равномерные), глобальным методам не за что зацепиться. Если красные — компактное облако или кольцо, их найдут модели плотности и формы.",
+sig_sub_custom:"<b>Свой датасет:</b> статистика соседей ниже показывает, плотнее ли ваш красный класс зелёного, разреженнее или такой же.",
+sig_note_custom:"Если красные сосредоточены, расстояния до их соседей меньше (плотно = красный). Если красные распределены как зелёные, кривые совпадают, и ни один метод без меток их не разделит.",
+sig_call_custom:"<b>Свой датасет:</b> выбирайте метод, соответствующий генератору: EM «кольцо + фон» для кольца, EM «гаусс + фон» для облака, плотность k-NN для любой сосредоточенной формы. Таблица конструктора ранжирует их все.",
+res_ds_custom:"(свой датасет, считается в браузере)",res_sub_custom:"F1 всех методов лаборатории с параметрами по умолчанию на вашем датасете, посчитанный в браузере (ноутбук на нём не запускался). Пунктир — базовый уровень «все красные» ({base}).",
+d_uniform:"Равномерное",d_gauss:"Гауссово",d_ring:"Кольцо",
+des_h:"Конструктор датасета",
+des_sub:"Выберите, как распределены зелёные и красные точки внутри исходной области, <b>щёлкните по карте, чтобы задать центр</b> красной окружности или облака, и все классификаторы перезапустятся на новых данных. Это тот же генератор, что и <code>make_distinct_dataset.py</code>. Браузер использует свой генератор случайных чисел, поэтому отдельные точки отличаются от результата Python, но распределения те же.",
+des_green:"Зелёные точки",des_red:"Красные точки",des_n:"Количество",des_gsig:"Разброс σ (px), центр области",des_R:"Радиус R (px)",des_rs_ring:"Ширина кольца σ (px)",des_rs_gauss:"Разброс σ (px)",
+des_center:"Центр (px)",des_click:"Щёлкните в любом месте карты, чтобы переместить.",des_seed:"Случайное зерно",des_auto:"Автоматически перезапускать классификацию",
+des_run:"Сгенерировать и классифицировать",des_reset:"Сбросить",des_map:"Карта: щёлкните, чтобы задать центр",des_cli:"Те же распределения в Python:",
+des_res:"Классификация на этом датасете",des_open:"Открыть в лаборатории →",des_gen:"генерация…",des_cls:"классификация {i}/{n}…",des_done:"готово за {s} с",
+des_th_f:"F1",des_th_l:"к базовому",des_lg_ring:"красная окружность ±2σ",des_lg_blob:"красные σ и 2σ",des_lg_gblob:"зелёные σ",des_lg_c:"центр",
+dd_red_ring:"красное кольцо R = {R} px, σ = {s} px в ({cx}, {cy})",dd_red_gauss:"красное гауссово облако σ = {s} px в ({cx}, {cy})",dd_red_uniform:"равномерные красные",
+dd_green_uniform:"равномерные зелёные",dd_green_gauss:"зелёное гауссово облако σ = {s} px",
+note_bayes:"истинная модель: {desc}",mn_gu:"Смесь «гаусс + фон» (EM)",cmp_c:"Свой",tsne_na:"Карты t-SNE посчитаны заранее только для исходного и различимого датасетов",
+md_gu:"EM для <b>одного гауссова облака и равномерного фона</b>. Это правильная модель, когда красные — гауссово облако (выберите «Гауссово» в конструкторе). На кольце она не работает, потому что кольцо не облако, а на исходных данных искать нечего.",
+md_bayes:"<b>Использует истинный генератор.</b> Апостериорная вероятность P(красный | x) по точным плотностям, из которых получены данные (make_distinct_dataset.py или конструктор). В среднем её не превзойти, поэтому её F1 — потолок для этого датасета. Нарисована истинная форма.",
 nav_problem:"Задача",nav_trap:"Ловушка базового уровня",nav_lab:"Лаборатория",nav_signal:"Где сигнал",nav_distinct:"Различимые данные",nav_results:"Результаты ноутбука",nav_repo:"Репозиторий",nav_take:"Выводы",
 ds_orig_short:"Исходный",ds_dist_short:"Различимый",theme:"Тема",computing:"вычисление…",red:"красные",green:"зелёные",
 hero_eyebrow:"ML-overlay-problem · разбор кейса",
@@ -462,10 +547,9 @@ tip_truth:"истина",tip_pred:"предсказано",tip_score:"оценк
 g_ref:"Эталоны",g_glob:"Глобальная кластеризация",g_dens:"Кластеризация по плотности",g_loc:"Локальные оценки",g_emb:"Вложение",g_sup:"Потолок с учителем",tag_labels:"метки",
 p_seed:"Случайное зерно",p_m:"Параметр размытости m",p_eps:"eps (в σ)",p_minpts:"min_samples",p_epst:"eps (единицы t-SNE)",
 note_db:"{nc} кластеров · {noise} шумовых точек",note_tsne:"{nc} кластеров · {noise} шум · красный = кластер №{c} (выбран по F1, используются метки)",
-note_ring:"Подгонка EM: центр ({cx}, {cy}) px · R = {R} px · σ = {s} px · π<sub>красн</sub> = {pi}",note_bayes:"истинная окружность: центр (1046, 904) px · R = 350 px · σ = 15 px",
+note_ring:"Подгонка EM: центр ({cx}, {cy}) px · R = {R} px · σ = {s} px · π<sub>красн</sub> = {pi}",
 mn_base:"Все красные (базовый)",mn_bayes:"Байесовский оптимум (истинная модель)",mn_km:"K-Means (k=2)",mn_gmm:"Гауссова смесь (2, full)",mn_ring:"Смесь «кольцо + фон» (EM)",mn_fcm:"Fuzzy C-Means",mn_db:"DBSCAN",mn_kdd:"Плотность k-NN",mn_kd:"Разреженность k-NN",mn_lnnd:"LNND",mn_lof:"Local Outlier Factor",mn_tsne:"t-SNE + DBSCAN",mn_sup:"Классификатор k-NN (LOO)",
 md_base:"Все точки помечаются красными. Это нижняя планка, которую должен превзойти любой метод: F1 = 2p/(1+p). На исходных данных это 0,239 — число, которое дали многие методы ноутбука.",
-md_bayes:"<b>Использует истинный генератор.</b> Апостериорная вероятность P(красный | x), посчитанная по точным плотностям кольца и равномерного фона из make_distinct_dataset.py. В среднем её не может превзойти ни один метод, поэтому её F1 (≈ 0,8) — потолок для различимого датасета. Нарисованная окружность — истинное кольцо.",
 md_km:"K-Means делит плоскость одной прямой между двумя центроидами. Центр у классов общий (на различимых данных кольцо стоит в центре облака), поэтому разрез чисто геометрический, и в каждой половине примерно одинаковая доля красных. Соответствие «кластер → цвет» выбирается по меткам, как в ноутбуке.",
 md_gmm:"Главная рекомендация README. EM подгоняет две гауссианы с полной ковариацией. Ни исходное облако, ни кольцо не являются «двумя облаками», поэтому модель находит две половины пространства. Эллипсы — 1σ и 2σ. Кривая F1 остаётся около случайной линии.",
 md_ring:"EM для смеси <b>зашумлённой окружности и равномерного фона</b> на области данных — та же модель, по которой создан различимый датасет. Метки не используются. Грубый перебор по сетке выбирает начальную точку, затем на каждом шаге окружность переподгоняется взвешенным МНК (метод Касы) и обновляются R, σ и доля красных. Нарисованы найденная окружность и полоса ±2σ. На исходных данных кольца нет, и модель цепляется за шум.",
@@ -488,7 +572,7 @@ sig_note_dist:"На различимых данных эффект <b>обрат
 sig_call_orig:"<b>Исходный датасет: побеждает простейшая оценка.</b> Упорядочим точки по расстоянию до k-го ближайшего соседа и отметим 227 самых разреженных. Метки не используются, а F1 равен <b>0,39 при k = 10</b> и <b>0,46 при k = 5</b>. Это не хуже RBF-SVM с учителем из ноутбука (F1 на тесте 0,41) и намного лучше LNND (0,295). Попробуйте «Разреженность k-NN» в лаборатории.",
 sig_call_dist:"<b>Различимый датасет: моделируйте форму.</b> Плотность k-NN использует только «красные плотнее» и без меток даёт F1 ≈ 0,64. EM «кольцо + фон» использует ещё и «красные лежат на окружности», поэтому восстанавливает окружность (центр, R, σ) и приближается к байесовскому потолку (≈ 0,8). Попробуйте оба метода в лаборатории.",
 dist_h:"Датасет с различимыми распределениями",
-dist_sub:"<code>make_distinct_dataset.py</code> создаёт <code>df_red_green_distinct.csv</code>. Он сохраняет исходную область и меняет только то, как размещаются цвета: <b style=\"color:var(--green)\">зелёные</b> распределены равномерно, а <b style=\"color:var(--red)\">красные</b> — вдоль окружности с гауссовым профилем поперёк неё. Классы всё ещё перекрываются, потому что зелёные покрывают и кольцо, поэтому даже истинная модель не достигает F1 = 1.",
+dist_sub:"Свой вариант можно собрать в <a href=\"#designer\">конструкторе</a>. <code>make_distinct_dataset.py</code> создаёт <code>df_red_green_distinct.csv</code>. Он сохраняет исходную область и меняет только то, как размещаются цвета: <b style=\"color:var(--green)\">зелёные</b> распределены равномерно, а <b style=\"color:var(--red)\">красные</b> — вдоль окружности с гауссовым профилем поперёк неё. Классы всё ещё перекрываются, потому что зелёные покрывают и кольцо, поэтому даже истинная модель не достигает F1 = 1.",
 how_h:"Как создан датасет",
 how_body:"<ol class=\"take\" style=\"font-size:14px\"><li><b>Область F.</b> Все места в пределах 45 px от какой-либо точки исходного CSV. Так сохраняется общее расположение, включая «дыры».</li><li><b style=\"color:var(--green)\">Зелёные: равномерно (пуассоновский процесс).</b> Число точек N<sub>g</sub> ~ Poisson(1445) (получилось 1 477). Каждая точка x ~ Uniform(F), поэтому плотность постоянна: <code>p<sub>g</sub>(x) = 1 / |F|</code>, |F| ≈ 1,92 млн px².</li><li><b style=\"color:var(--red)\">Красные: зашумлённая окружность.</b> 227 точек, угол θ ~ Uniform(0, 2π) и радиус r ~ Normal(R = 350, σ = 15) px; точка ставится в x = c + r·(cos θ, sin θ), центр c = (1046, 904). Если точка попала вне F, она генерируется заново. Плотность: <code>p<sub>r</sub>(x) = N(|x − c|; R, σ²) / (2π|x − c|)</code>.</li><li><b>Оптимальное правило.</b> P(красный | x) = π<sub>r</sub>p<sub>r</sub> / (π<sub>r</sub>p<sub>r</sub> + π<sub>g</sub>p<sub>g</sub>). На кольце это около 0,79 (3,7 красных на одного зелёного), а в нескольких σ от него почти 0. Зерно 42, поэтому файл воспроизводим.</li></ol>",
 how_fig_h:"Профиль плотности поперёк окружности",
@@ -536,9 +620,10 @@ let DS,N,RX,RY,Y,EX,EY,NR,PR,BASE,mx,my,sx,sy,ZX,ZY,xmin,xmax,ymin,ymax,exmin,ex
 const mean=a=>a.reduce((s,v)=>s+v,0)/a.length, std=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length)};
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function buildDataset(key){const D=DATASETS[key];if(D.N)return D;
-  const P=D.raw.split(" ").map(s=>s.split(",").map(Number)),n=P.length;D.N=n;
-  D.RX=new Float64Array(n);D.RY=new Float64Array(n);D.Y=new Uint8Array(n);D.EX=new Float64Array(n);D.EY=new Float64Array(n);
-  P.forEach((r,i)=>{D.RX[i]=r[0];D.RY[i]=r[1];D.Y[i]=r[2];D.EX[i]=r[3];D.EY[i]=r[4]});
+  if(D.raw){const P=D.raw.split(" ").map(s=>s.split(",").map(Number)),n=P.length;
+    D.RX=new Float64Array(n);D.RY=new Float64Array(n);D.Y=new Uint8Array(n);D.EX=new Float64Array(n);D.EY=new Float64Array(n);
+    P.forEach((r,i)=>{D.RX[i]=r[0];D.RY[i]=r[1];D.Y[i]=r[2];D.EX[i]=r[3];D.EY[i]=r[4]})}
+  const n=D.RX.length;D.N=n;if(!D.EX){D.EX=new Float64Array(n);D.EY=new Float64Array(n);D.noTsne=true}
   D.NR=D.Y.reduce((a,b)=>a+b,0);D.PR=D.NR/n;D.BASE=2*D.PR/(1+D.PR);
   D.mx=mean(D.RX);D.my=mean(D.RY);D.sx=std(D.RX);D.sy=std(D.RY);
   D.ZX=D.RX.map(v=>(v-D.mx)/D.sx);D.ZY=D.RY.map(v=>(v-D.my)/D.sy);
@@ -550,14 +635,38 @@ function buildDataset(key){const D=DATASETS[key];if(D.N)return D;
       if(v<bd[KMAX-1]){let p=KMAX-1;while(p>0&&bd[p-1]>v){bd[p]=bd[p-1];bi[p]=bi[p-1];p--}bd[p]=v;bi[p]=j}}
     for(let k=0;k<KMAX;k++){NI[i*KMAX+k]=bi[k];ND[i*KMAX+k]=Math.sqrt(bd[k])}}
   D.NI=NI;D.ND=ND;
-  const G=110,R2=45*45;let inside=0;
+  const G=D.areaPx?0:110,R2=45*45;let inside=0;
   for(let a=0;a<G;a++)for(let b=0;b<G;b++){const gx=D.xmin-45+(D.xmax-D.xmin+90)*(a+.5)/G,gy=D.ymin-45+(D.ymax-D.ymin+90)*(b+.5)/G;
     for(let j=0;j<n;j++){const dx=gx-D.RX[j],dy=gy-D.RY[j];if(dx*dx+dy*dy<=R2){inside++;break}}}
-  D.AREA_PX=inside/(G*G)*(D.xmax-D.xmin+90)*(D.ymax-D.ymin+90);D.AREA=D.AREA_PX/(D.sx*D.sy);
+  D.AREA_PX=D.areaPx||inside/(G*G)*(D.xmax-D.xmin+90)*(D.ymax-D.ymin+90);D.AREA=D.AREA_PX/(D.sx*D.sy);
   return D}
 function useDataset(key){const D=buildDataset(key);DS=key;
   ({N,RX,RY,Y,EX,EY,NR,PR,BASE,mx,my,sx,sy,ZX,ZY,xmin,xmax,ymin,ymax,exmin,exmax,eymin,eymax,NI,ND,AREA}=D)}
-const INIT_DS=(()=>{try{const q=new URLSearchParams(location.search).get("data");if(q==="orig"||q==="dist")return q}catch(e){}return"dist"})();
+const INIT_DS=(()=>{try{const q=new URLSearchParams(location.search).get("data");if(q==="orig"||q==="dist"||q==="custom")return q}catch(e){}return"dist"})();
+/* ======================= designer generator ======================= */
+const DEF_P={green:"uniform",ng:1445,gs:400,red:"ring",nr:227,R:350,rs:15,cx:1046,cy:904,seed:42};
+let CP={...DEF_P};
+const ORIG=buildDataset("orig"),FPR=45,FCELL=45,FGRID=new Map();
+for(let i=0;i<ORIG.N;i++){const k=Math.floor(ORIG.RX[i]/FCELL)+","+Math.floor(ORIG.RY[i]/FCELL);if(!FGRID.has(k))FGRID.set(k,[]);FGRID.get(k).push(i)}
+function inFoot(x,y){const a=Math.floor(x/FCELL),b=Math.floor(y/FCELL);for(let i=a-1;i<=a+1;i++)for(let j=b-1;j<=b+1;j++){const L=FGRID.get(i+","+j);if(L)for(const q of L){if((ORIG.RX[q]-x)**2+(ORIG.RY[q]-y)**2<=FPR*FPR)return true}}return false}
+const FLO=[ORIG.xmin-FPR,ORIG.ymin-FPR],FHI=[ORIG.xmax+FPR,ORIG.ymax+FPR],FCX=(ORIG.xmin+ORIG.xmax)/2,FCY=(ORIG.ymin+ORIG.ymax)/2;
+const FCEN=[1046,904]; // footprint centre used by the Python generator (original point nearest the centroid)
+function makeCustom(){const R=rng(CP.seed*7919+13),nrm=()=>{let u=0,v=0;while(!u)u=R();v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+  const draw=(n,sampler)=>{const o=[];let guard=0;while(o.length<n&&guard<200*n+5000){guard++;const p=sampler();if(inFoot(p[0],p[1]))o.push(p)}return o};
+  const unif=()=>[FLO[0]+R()*(FHI[0]-FLO[0]),FLO[1]+R()*(FHI[1]-FLO[1])];
+  const blob=(c,s)=>()=>[c[0]+s*nrm(),c[1]+s*nrm()];
+  const ring=(c,Rr,s)=>()=>{const th=2*Math.PI*R(),r=Rr+s*nrm();return[c[0]+r*Math.cos(th),c[1]+r*Math.sin(th)]};
+  const ng=CP.green==="uniform"?Math.max(1,Math.round(CP.ng+Math.sqrt(CP.ng)*nrm())):CP.ng;
+  const G=draw(ng,CP.green==="uniform"?unif:blob(FCEN,CP.gs));
+  const Rd=draw(CP.nr,CP.red==="ring"?ring([CP.cx,CP.cy],CP.R,CP.rs):CP.red==="gaussian"?blob([CP.cx,CP.cy],CP.rs):unif);
+  const all=G.concat(Rd),n=all.length;
+  DATASETS.custom={file:"my_data.csv",RX:Float64Array.from(all,p=>Math.round(p[0])),RY:Float64Array.from(all,p=>Math.round(p[1])),Y:Uint8Array.from(all,(p,i)=>i>=G.length?1:0),areaPx:ORIG.AREA_PX,params:{...CP}};
+  for(const k in cache)if(k.startsWith("custom"))delete cache[k];
+  return DATASETS.custom}
+function customDesc(P){P=P||CP;const red=P.red==="ring"?T("dd_red_ring",{R:P.R,s:P.rs,cx:P.cx,cy:P.cy}):P.red==="gaussian"?T("dd_red_gauss",{s:P.rs,cx:P.cx,cy:P.cy}):T("dd_red_uniform");
+  return red+"; "+(P.green==="uniform"?T("dd_green_uniform"):T("dd_green_gauss",{s:P.gs}))}
+
+if(INIT_DS==="custom")makeCustom();
 useDataset(INIT_DS);
 
 function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -635,19 +744,34 @@ function ringUniform(){const u=1/AREA,SQ=Math.sqrt(2*Math.PI);
 function solve3(A,b){const M=A.map((r,i)=>[...r,b[i]]);for(let c=0;c<3;c++){let p=c;for(let r=c+1;r<3;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)return null;[M[c],M[p]]=[M[p],M[c]];
   for(let r=0;r<3;r++)if(r!==c){const f=M[r][c]/M[c][c];for(let k=c;k<4;k++)M[r][k]-=f*M[c][k]}}return[0,1,2].map(i=>M[i][3]/M[i][i])}
 const TRUE_RING={cx:1046,cy:904,R:350,s:15};
-function bayesTrue(){const{cx,cy,R,s}=TRUE_RING,pr=227/(227+1445),pg=1-pr,ar=buildDataset("orig").AREA_PX,o=new Float64Array(N),SQ=Math.sqrt(2*Math.PI);
-  for(let i=0;i<N;i++){const r=Math.max(Math.hypot(RX[i]-cx,RY[i]-cy),1),g=Math.exp(-((r-R)**2)/(2*s*s))/(SQ*s*2*Math.PI*r);o[i]=pr*g/(pr*g+pg/ar)}return o}
+function bayesTrue(P){const ar=buildDataset("orig").AREA_PX,pr=P.nr/(P.nr+P.ng),pg=1-pr,o=new Float64Array(N),SQ=Math.sqrt(2*Math.PI);
+  const dg=(x,y)=>P.green==="uniform"?1/ar:Math.exp(-((x-FCEN[0])**2+(y-FCEN[1])**2)/(2*P.gs*P.gs))/(2*Math.PI*P.gs*P.gs);
+  const dr=(x,y)=>{if(P.red==="uniform")return 1/ar;const d=Math.hypot(x-P.cx,y-P.cy);if(P.red==="gaussian")return Math.exp(-d*d/(2*P.rs*P.rs))/(2*Math.PI*P.rs*P.rs);
+    const r=Math.max(d,1);return Math.exp(-((r-P.R)**2)/(2*P.rs*P.rs))/(SQ*P.rs*2*Math.PI*r)};
+  for(let i=0;i<N;i++){const a=pr*dr(RX[i],RY[i]),b=pg*dg(RX[i],RY[i]);o[i]=a/(a+b+1e-300)+1e-9*Math.random()}return o}
+function gaussUniform(){let s0=0;for(let i=1;i<N;i++)if(dk(i,10)<dk(s0,10))s0=i;
+  let mu=[ZX[s0],ZY[s0]],S=[[.05,0],[0,.05]],pi=.15;const r=new Float64Array(N),u=1/AREA;
+  for(let it=0;it<300;it++){const a=S[0][0],b=S[0][1],d=S[1][1],det=a*d-b*b;let nk=0,ax=0,ay=0;
+    for(let i=0;i<N;i++){const dx=ZX[i]-mu[0],dy=ZY[i]-mu[1],g=Math.exp(-.5*(d*dx*dx-2*b*dx*dy+a*dy*dy)/det)/(2*Math.PI*Math.sqrt(det));
+      r[i]=pi*g/(pi*g+(1-pi)*u);nk+=r[i];ax+=r[i]*ZX[i];ay+=r[i]*ZY[i]}
+    ax/=nk;ay/=nk;let sxx=0,sxy=0,syy=0;for(let i=0;i<N;i++){const dx=ZX[i]-ax,dy=ZY[i]-ay;sxx+=r[i]*dx*dx;sxy+=r[i]*dx*dy;syy+=r[i]*dy*dy}
+    const old=mu;mu=[ax,ay];S=[[sxx/nk+1e-6,sxy/nk],[sxy/nk,syy/nk+1e-6]];pi=nk/N;if(Math.hypot(old[0]-ax,old[1]-ay)<1e-8&&it>5)break}
+  return{r,mu,S,pi}}
+const TRUE_P={green:"uniform",ng:1445,gs:400,red:"ring",nr:227,R:350,rs:15,cx:1046,cy:904};
+function trueParams(){return DS==="custom"?DATASETS.custom.params:TRUE_P}
+function shapeOf(P){return P.red==="ring"?{ring:{cx:P.cx,cy:P.cy,R:P.R,s:P.rs}}:P.red==="gaussian"?{blob:{cx:P.cx,cy:P.cy,s:P.rs}}:{}}
 function kdist(k){const s=new Float64Array(N);for(let i=0;i<N;i++)s[i]=dk(i,k);return s}
 function knnSup(k){const s=new Float64Array(N);for(let i=0;i<N;i++){let a=0;for(let t=0;t<k;t++)a+=Y[NI[i*KMAX+t]];s[i]=a/k+1e-6*dk(i,1)}return s}
 
 /* ======================= method registry ======================= */
 const METHODS=[
  {id:"base",grp:"g_ref",type:"hard",params:[],run:()=>({pred:new Uint8Array(N).fill(1)})},
- {id:"bayes",grp:"g_ref",type:"score",sup:true,only:"dist",params:[],run:()=>({score:bayesTrue(),ring:{...TRUE_RING,true:1},noteK:"note_bayes"})},
+ {id:"bayes",grp:"g_ref",type:"score",sup:true,only:["dist","custom"],params:[],run:()=>{const P=trueParams();return{score:bayesTrue(P),...shapeOf(P),noteK:"note_bayes",noteV:{desc:customDesc(P)}}}},
  {id:"km",grp:"g_glob",type:"hard",params:[{k:"seed",l:"p_seed",min:1,max:20,v:1}],run:p=>{const r=kmeans(p.seed);return{pred:bestMap(r.lab),centers:r.C}}},
  {id:"gmm",grp:"g_glob",type:"score",params:[{k:"seed",l:"p_seed",min:1,max:20,v:1}],run:p=>{const g=gmm(p.seed);const k=curve(g.r[0]).ap>=curve(g.r[1]).ap?0:1;return{score:g.r[k],gmm:g,redComp:k}}},
  {id:"ring",grp:"g_glob",type:"score",params:[],run:()=>{const g=ringUniform(),s0=(sx+sy)/2;
     return{score:g.r,ring:{cx:g.cx*sx+mx,cy:g.cy*sy+my,R:g.R*s0,s:g.s*s0},noteK:"note_ring",noteV:{cx:Math.round(g.cx*sx+mx),cy:Math.round(g.cy*sy+my),R:Math.round(g.R*s0),s:num(g.s*s0,1),pi:num(g.pi,3)}}}},
+ {id:"gu",grp:"g_glob",type:"score",params:[],run:()=>{const g=gaussUniform();return{score:g.r,gmm:{mu:[g.mu],S:[g.S]},redComp:0}}},
  {id:"fcm",grp:"g_glob",type:"score",params:[{k:"m",l:"p_m",min:1.2,max:3,step:.1,v:2},{k:"seed",l:"p_seed",min:1,max:20,v:1}],run:p=>{const r=fcm(p.m,p.seed);const k=curve(r.U[0]).ap>=curve(r.U[1]).ap?0:1;return{score:r.U[k],centers:r.C}}},
  {id:"db",grp:"g_dens",type:"hard",params:[{k:"eps",l:"p_eps",min:.02,max:.4,step:.01,v:.08},{k:"minPts",l:"p_minpts",min:2,max:20,v:5}],
   run:p=>{const r=dbscan(p.eps,p.minPts);const sz={};for(const l of r.lab)if(l>=0)sz[l]=(sz[l]||0)+1;let big=-1,bs=0;for(const k in sz)if(sz[k]>bs){bs=sz[k];big=+k}
@@ -656,7 +780,7 @@ const METHODS=[
  {id:"kd",grp:"g_loc",type:"score",params:[{k:"k",l:"k",min:1,max:50,v:10}],run:p=>({score:kdist(p.k)})},
  {id:"lnnd",grp:"g_loc",type:"score",params:[{k:"k",l:"k",min:2,max:50,v:10}],run:p=>({score:lnnd(p.k)})},
  {id:"lof",grp:"g_loc",type:"score",params:[{k:"k",l:"k",min:2,max:50,v:20}],run:p=>({score:lof(p.k)})},
- {id:"tsne",grp:"g_emb",type:"hard",sup:true,params:[{k:"eps",l:"p_epst",min:1,max:8,step:.25,v:4},{k:"minPts",l:"p_minpts",min:3,max:40,v:20}],
+ {id:"tsne",grp:"g_emb",type:"hard",sup:true,only:["orig","dist"],params:[{k:"eps",l:"p_epst",min:1,max:8,step:.25,v:4},{k:"minPts",l:"p_minpts",min:3,max:40,v:20}],
   run:p=>{const r=dbscan(p.eps,p.minPts,EX,EY);let best=new Uint8Array(N),bf=-1,bc=-1;for(let c=0;c<r.nc;c++){const pr=Uint8Array.from(r.lab,l=>l===c?1:0),f=confusion(pr).f;if(f>bf){bf=f;best=pr;bc=c}}
     return{pred:best,noteK:"note_tsne",noteV:{nc:r.nc,noise:r.lab.filter(l=>l<0).length,c:bc}}}},
  {id:"sup",grp:"g_sup",type:"score",sup:true,params:[{k:"k",l:"k",min:1,max:50,v:15}],run:p=>({score:knnSup(p.k)})}
@@ -674,7 +798,7 @@ function predOf(r){if(r.pred)return r.pred;const n=Math.max(1,Math.round(state.f
 const mEl=document.getElementById("methods");
 function bestF1(id){const r=runMethod(id);if(r.pred)return confusion(r.pred).f;return r.curve.f[Math.round(PR*N)]}
 function renderMethods(){mEl.innerHTML="";let g="";
-  METHODS.filter(m=>!m.only||m.only===DS).forEach(m=>{if(m.grp!==g){g=m.grp;const d=document.createElement("div");d.className="grp";d.textContent=T(g);mEl.appendChild(d)}
+  METHODS.filter(m=>!m.only||m.only.includes(DS)).forEach(m=>{if(m.grp!==g){g=m.grp;const d=document.createElement("div");d.className="grp";d.textContent=T(g);mEl.appendChild(d)}
     const b=document.createElement("button");b.className="mbtn"+(m.id===state.m?" on":"");
     b.innerHTML=`<span>${mname(m)}</span><span style="display:flex;gap:6px;align-items:center">${m.sup?`<span class="tag sup">${T("tag_labels")}</span>`:""}<span class="f" id="mf_${m.id}"></span></span>`;
     b.onclick=()=>{state.m=m.id;if(m.type==="score")state.frac=PR;renderMethods();renderControls();update()};mEl.appendChild(b)});
@@ -697,7 +821,7 @@ function mapperE(w,h,pad=14){const sc=Math.min((w-2*pad)/(exmax-exmin),(h-2*pad)
 function mark(ctx,x,y,isRed,col,r){ctx.strokeStyle=col;ctx.fillStyle=col;if(isRed){ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill()}else{ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x-r,y-r);ctx.lineTo(x+r,y+r);ctx.moveTo(x+r,y-r);ctx.lineTo(x-r,y+r);ctx.stroke()}}
 function diamond(ctx,x,y,s,col){ctx.strokeStyle=col;ctx.lineWidth=1.7;ctx.beginPath();ctx.moveTo(x,y-s);ctx.lineTo(x+s,y);ctx.lineTo(x,y+s);ctx.lineTo(x-s,y);ctx.closePath();ctx.stroke()}
 let geo=null;
-function drawScatter(){const cv=document.getElementById("canvas"),{ctx,w,h}=setupCanvas(cv,0.86),TS=state.space==="tsne",M=TS?mapperE(w,h):mapper(w,h),AX=TS?EX:RX,AY=TS?EY:RY;geo={M,w,h,AX,AY};
+function drawScatter(){if(state.space==="tsne"&&buildDataset(DS).noTsne)setSpace("xy");const tb=document.getElementById("tsneBtn");tb.disabled=!!buildDataset(DS).noTsne;tb.title=tb.disabled?T("tsne_na"):"";const cv=document.getElementById("canvas"),{ctx,w,h}=setupCanvas(cv,0.86),TS=state.space==="tsne",M=TS?mapperE(w,h):mapper(w,h),AX=TS?EX:RX,AY=TS?EY:RY;geo={M,w,h,AX,AY};
   ctx.fillStyle=css("--surface-2");ctx.fillRect(0,0,w,h);
   const r=state.res,pred=predOf(r),v=state.view,rr=Math.max(2,Math.min(3.4,w/240));
   const C={tp:css("--tp"),tn:css("--tn"),red:css("--red"),green:css("--green"),err:css("--err")};
@@ -719,6 +843,7 @@ function drawScatter(){const cv=document.getElementById("canvas"),{ctx,w,h}=setu
   if(r.ring&&!TS){const g=r.ring,px=M.px(g.cx),py=M.py(g.cy);
     [[g.R,[],.9,2],[g.R-2*g.s,[4,4],.45,1.3],[g.R+2*g.s,[4,4],.45,1.3]].forEach(([rad,dash,al,lw])=>{if(rad<=0)return;ctx.beginPath();ctx.arc(px,py,rad*M.sc,0,2*Math.PI);ctx.strokeStyle=css("--text");ctx.setLineDash(dash);ctx.globalAlpha=al;ctx.lineWidth=lw;ctx.stroke()});
     ctx.setLineDash([]);ctx.globalAlpha=1;ctx.fillStyle=css("--text");ctx.beginPath();ctx.arc(px,py,3.5,0,7);ctx.fill()}
+  if(r.blob&&!TS){const g=r.blob;[[g.s,[],.85],[2*g.s,[5,4],.45]].forEach(([rad,dash,al])=>{ctx.beginPath();ctx.arc(M.px(g.cx),M.py(g.cy),rad*M.sc,0,2*Math.PI);ctx.strokeStyle=css("--text");ctx.setLineDash(dash);ctx.globalAlpha=al;ctx.lineWidth=1.6;ctx.stroke()});ctx.setLineDash([]);ctx.globalAlpha=1}
   if(r.centers&&!TS){r.centers.forEach(c=>{const[p,q]=toPx(c[0],c[1]);ctx.fillStyle=css("--text");ctx.strokeStyle=css("--surface");ctx.lineWidth=3;ctx.beginPath();ctx.arc(p,q,7,0,7);ctx.stroke();ctx.fill()})}
   const lg=document.getElementById("legend");
   if(v==="truth")lg.innerHTML=`<span><i style="background:var(--red)"></i>${T("lg_truth_r")}</span><span><i style="background:var(--green)"></i>${T("lg_truth_g")}</span>`;
@@ -765,11 +890,11 @@ function update(){const m=METHODS.find(x=>x.id===state.m);state.res=runMethod(st
   drawScatter();drawCurve();const el=document.getElementById("mf_"+m.id);if(el)el.textContent=f3(bestF1(m.id))}
 function setView(v){state.view=v;document.querySelectorAll("#viewSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===v))}
 document.querySelectorAll("#viewSeg button").forEach(b=>b.onclick=()=>{setView(b.dataset.v);drawScatter()});
-function setSpace(s){state.space=s;document.querySelectorAll("#spaceSeg button").forEach(b=>b.classList.toggle("on",b.dataset.s===s))}
+function setSpace(s){if(s==="tsne"&&buildDataset(DS).noTsne)s="xy";state.space=s;document.querySelectorAll("#spaceSeg button").forEach(b=>b.classList.toggle("on",b.dataset.s===s))}
 document.querySelectorAll("#spaceSeg button").forEach(b=>b.onclick=()=>{setSpace(b.dataset.s);drawScatter()});
 
 /* ======================= problem / trap / signal ======================= */
-function problem(){const D=DATASETS[DS];document.getElementById("dsName").textContent=T("ds_name_"+DS);
+function problem(){const D=DATASETS[DS];document.getElementById("dsName").textContent=T("ds_name_"+DS,{desc:DS==="custom"?customDesc(DATASETS.custom.params):""});
   document.getElementById("probSub").innerHTML=T("prob_sub",{file:D.file,why:T("prob_why_"+DS)});
   document.getElementById("statNote").innerHTML=T("stat_note_"+DS);
   document.getElementById("tN").textContent=intf(N);document.getElementById("tR").textContent=intf(NR);document.getElementById("tG").textContent=intf(N-NR);
@@ -831,11 +956,11 @@ const NB_ORIG=[
  ["k-NN sparsity, k=10 (this page)",.3877,0,{en:"no labels, flag top 13.6%; k=5 gives 0.458",ru:"без меток, топ 13,6%; при k=5 — 0,458"}]];
 const NB_DIST=[["DBSCAN", 0.7821, 0, {"en": "eps / min_samples picked by F1 against labels", "ru": "eps / min_samples выбраны по F1 на метках"}], ["Agglomerative", 0.2523, 0], ["Fuzzy C-Means", 0.2159, 0], ["t-SNE + DBSCAN", 0.2351, 0, {"en": "= all-red: the notebook's eps grid misses the ring", "ru": "= все красные: сетка eps в ноутбуке не находит кольцо"}], ["Spectral (kNN affinity)", 0.2207, 0], ["ICA + DBSCAN", 0.2351, 0, {"en": "= all-red", "ru": "= все красные"}], ["ICA + Agglomerative", 0.3107, 0], ["ICA + GMM", 0.3379, 0], ["ICA + Spectral", 0.214, 0], ["ICA + K-Means", 0.2658, 0], ["KDE density ratio", 0.2357, 1, {"en": "fits a KDE per colour", "ru": "KDE по каждому цвету"}], ["Hyperbolic graph (Poincaré)", 0.2153, 0], ["Hyperbolic GCN (t-SNE edges)", 0.2166, 0, {"en": "trains now; seeded", "ru": "теперь обучается; зерно фиксировано"}], ["Logistic regression (balanced)", 0.2045, 1, {"en": "supervised, test split: a line can't enclose a ring", "ru": "с учителем, тест: прямая не может охватить кольцо"}], ["Random forest (balanced)", 0.7273, 1, {"en": "supervised, test split", "ru": "с учителем, тестовая выборка"}], ["Gradient boosting", 0.5983, 1, {"en": "supervised, test split", "ru": "с учителем, тестовая выборка"}], ["SVM RBF, tuned threshold", 0.562, 1, {"en": "supervised, test split; CV 0.494", "ru": "с учителем, тест; CV 0,494"}], ["One-Class SVM", 0.2653, 1, {"en": "trained on green only", "ru": "обучен только на зелёных"}], ["LNND (best k=30)", 0.2641, 0, {"en": "k chosen by F1 against labels", "ru": "k выбран по F1 на метках"}], ["OCSVM + LNND combined", 0.2664, 1], ["k-NN density, k=10 (this page)", 0.643, 0, {"en": "no labels, flag top 13.3%", "ru": "без меток, топ 13,3%"}], ["Ring + uniform EM (this page)", 0.714, 0, {"en": "no labels; recovers the circle", "ru": "без меток; находит окружность"}]];
 let resMode="score";
-function results(mode){resMode=mode=mode||resMode;const NB=DS==="dist"?NB_DIST:NB_ORIG;
+function results(mode){resMode=mode=mode||resMode;const NB=DS==="dist"?NB_DIST:DS==="custom"?METHODS.filter(m=>isFinite(DES[m.id])).map(m=>[mname(m),DES[m.id],m.sup?1:0]):NB_ORIG;
   document.getElementById("resDs").textContent=T("res_ds_"+DS);document.getElementById("resSub").innerHTML=T("res_sub_"+DS,{base:num(BASE,3)});
   const el=document.getElementById("bars"),rows=NB.map((r,i)=>({n:r[0],f:r[1],sup:r[2],note:r[3]?r[3][LANG]:"",i}));if(mode==="score")rows.sort((a,b)=>b.f-a.f);
   const xm=Math.max(.5,Math.ceil(Math.max(...rows.map(r=>r.f))*10)/10);el.innerHTML="";
-  rows.forEach(r=>{const isNew=r.n.includes("this page"),col=isNew?"var(--good)":r.sup?"var(--warn)":(r.f>BASE+.005?"var(--accent)":"var(--base)");
+  rows.forEach(r=>{const isNew=r.n.includes("this page")||DS==="custom"&&!r.sup,col=isNew?"var(--good)":r.sup?"var(--warn)":(r.f>BASE+.005?"var(--accent)":"var(--base)");
     const name=isNew&&LANG==="ru"?r.n.replace("(this page)","(эта страница)").replace("k-NN sparsity","Разреженность k-NN").replace("k-NN density","Плотность k-NN").replace("Ring + uniform EM","EM «кольцо + фон»"):r.n;
     const d=document.createElement("div");d.className="row";d.title=r.note||"";
     d.innerHTML=`<div>${name}${r.note?`<div style="font-size:11.5px;color:var(--faint);line-height:1.3">${r.note}</div>`:""}</div><div class="track"><div class="fill" style="width:${r.f/xm*100}%;background:${col}"></div><div class="bl" style="left:${BASE/xm*100}%"></div></div><div class="num">${num(r.f,3)}</div>`;el.appendChild(d)})}
@@ -843,38 +968,90 @@ document.querySelectorAll("#resSeg button").forEach(b=>b.onclick=()=>{document.q
 
 /* ======================= comparison table ======================= */
 let CMP=null;
-function defaultF1(id){const m=METHODS.find(x=>x.id===id);if(m.only&&m.only!==DS)return NaN;const key=DS+id+JSON.stringify(Object.fromEntries(m.params.map(p=>[p.k,p.v])));
+function defaultF1(id){const m=METHODS.find(x=>x.id===id);if(m.only&&!m.only.includes(DS))return NaN;const key=DS+id+JSON.stringify(Object.fromEntries(m.params.map(p=>[p.k,p.v])));
   if(!cache[key]){const sv=state.params[id];state.params[id]=Object.fromEntries(m.params.map(p=>[p.k,p.v]));runMethod(id);state.params[id]=sv}
   const r=cache[key];return r.pred?confusion(r.pred).f:r.curve.f[Math.round(PR*N)]}
 function compareTable(){if(!CMP){const cur=DS;CMP={};for(const d of ["orig","dist"]){useDataset(d);CMP[d]={};METHODS.forEach(m=>CMP[d][m.id]=defaultF1(m.id))}useDataset(cur)}
-  let h=`<tr><th>${T("cmp_m")}</th><th>${T("cmp_o")}</th><th>${T("cmp_d")}</th></tr>`;
-  METHODS.forEach(m=>{const a=CMP.orig[m.id],b=CMP.dist[m.id],best=b>=.6;h+=`<tr data-m="${m.id}" style="cursor:pointer"><td>${mname(m)} ${m.sup?`<span class="tag sup">${T("tag_labels")}</span>`:""}</td><td>${f3(a)}</td><td style="${best?"color:var(--good);font-weight:650":""}">${f3(b)}</td></tr>`});
+  const hasC=Object.keys(DES).length>0;
+  let h=`<tr><th>${T("cmp_m")}</th><th>${T("cmp_o")}</th><th>${T("cmp_d")}</th>${hasC?`<th>${T("cmp_c")}</th>`:""}</tr>`;
+  METHODS.forEach(m=>{const a=CMP.orig[m.id],b=CMP.dist[m.id],c=DES[m.id],best=b>=.6;h+=`<tr data-m="${m.id}" style="cursor:pointer"><td>${mname(m)} ${m.sup?`<span class="tag sup">${T("tag_labels")}</span>`:""}</td><td>${f3(a)}</td><td style="${best?"color:var(--good);font-weight:650":""}">${f3(b)}</td>${hasC?`<td>${f3(c)}</td>`:""}</tr>`});
   const t=document.getElementById("cmpTable");t.innerHTML=h;t.querySelectorAll("tr[data-m]").forEach(tr=>tr.onclick=()=>{switchDataset("dist");state.m=tr.dataset.m;state.frac=PR;renderMethods();renderControls();update();location.hash="#lab"})}
 
 /* ======================= switches ======================= */
 function setUrl(k,v){try{const u=new URL(location.href);u.searchParams.set(k,v);history.replaceState(null,"",u)}catch(e){}}
 function syncDs(){document.querySelectorAll(".dsSeg button").forEach(b=>b.classList.toggle("on",b.dataset.ds===DS));
-  document.getElementById("dsHero").textContent=T("ds_hero_"+DS);document.getElementById("dsHeroNote").innerHTML=T("ds_note_"+DS,{base:num(BASE,3)});setUrl("data",DS)}
-function redraw(){drawMini();trap();signal();drawHow();update()}
-function switchDataset(key){if(key===DS)return;useDataset(key);
-  const m=METHODS.find(x=>x.id===state.m);if(m.only&&m.only!==key)state.m=key==="dist"?"ring":"kd";
-  if(state.m==="kd"&&key==="dist")state.m="ring";else if((state.m==="kdd"||state.m==="ring")&&key==="orig")state.m="kd";
-  state.frac=PR;syncDs();results();problem();renderMethods();renderControls();redraw();setTimeout(()=>{METHODS.forEach(m=>{if(!m.only||m.only===DS)runMethod(m.id)});renderMethods()},30)}
+  document.getElementById("dsHero").textContent=T("ds_hero_"+DS);document.getElementById("dsHeroNote").innerHTML=T("ds_note_"+DS,{base:num(BASE,3),desc:DS==="custom"?customDesc(DATASETS.custom.params):""});setUrl("data",DS)}
+function redraw(){drawMini();trap();signal();drawHow();update();drawDes()}
+function defaultMethod(key){const P=key==="custom"?DATASETS.custom.params:null;return key==="orig"?"kd":key==="dist"?"ring":P.red==="ring"?"ring":P.red==="gaussian"?"gu":"kdd"}
+function switchDataset(key,force){if(key===DS&&!force)return;if(key==="custom"&&!DATASETS.custom){makeCustom();desRun(true)}useDataset(key);
+  state.m=defaultMethod(key);
+  state.frac=PR;syncDs();results();problem();renderMethods();renderControls();redraw();setTimeout(()=>{METHODS.forEach(m=>{if(!m.only||m.only.includes(DS))runMethod(m.id)});renderMethods()},30)}
 document.querySelectorAll(".dsSeg button").forEach(b=>b.onclick=()=>switchDataset(b.dataset.ds));
 function applyLang(){document.documentElement.lang=LANG;document.querySelectorAll("[data-t]").forEach(el=>el.innerHTML=T(el.dataset.t));
   document.querySelectorAll(".langSeg button").forEach(b=>b.classList.toggle("on",b.dataset.lang===LANG));document.title=LANG==="ru"?"Лаборатория наложения":"Overlay Clustering Lab"}
-function setLang(l){if(l===LANG)return;LANG=l;try{localStorage.setItem("lang",l)}catch(e){}setUrl("lang",l);applyLang();syncDs();problem();results();renderMethods();renderControls();redraw();if(CMP)compareTable()}
+function setLang(l){if(l===LANG)return;LANG=l;try{localStorage.setItem("lang",l)}catch(e){}setUrl("lang",l);applyLang();syncDs();problem();results();renderMethods();renderControls();redraw();if(CMP)compareTable();desUI();renderDesTable()}
 document.querySelectorAll(".langSeg button").forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
 document.getElementById("goTsne").onclick=()=>{switchDataset("dist");state.m="tsne";setSpace("tsne");setView("outcome");renderMethods();renderControls();update();location.hash="#lab"};
 document.getElementById("themeBtn").onclick=()=>{const r=document.documentElement,cur=r.dataset.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");r.dataset.theme=cur==="dark"?"light":"dark";try{localStorage.setItem("theme",r.dataset.theme)}catch(e){}redraw()};
 try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>redraw());
-let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{drawMini();drawScatter()},120)});
+let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{drawMini();drawScatter();drawDes()},120)});
+
+/* ======================= designer UI ======================= */
+let DES={},desTok=0,desTimer=null,desT0=0;
+const $=id=>document.getElementById(id);
+function desUI(){$("v_ng").textContent=intf(CP.ng);$("v_gs").textContent=CP.gs;$("v_nr").textContent=CP.nr;$("v_R").textContent=CP.R;$("v_rs").textContent=CP.rs;$("v_seed").textContent=CP.seed;
+  $("v_c").textContent=`(${CP.cx}, ${CP.cy})`;$("l_rs").textContent=T(CP.red==="ring"?"des_rs_ring":"des_rs_gauss");
+  $("ctl_gs").style.display=CP.green==="gaussian"?"":"none";$("ctl_R").style.display=CP.red==="ring"?"":"none";$("ctl_rs").style.display=CP.red==="uniform"?"none":"";$("ctl_c").style.display=CP.red==="uniform"?"none":"";
+  ["s_ng","s_gs","s_nr","s_R","s_rs","s_seed"].forEach((id,i)=>$(id).value=[CP.ng,CP.gs,CP.nr,CP.R,CP.rs,CP.seed][i]);
+  document.querySelectorAll("#gDist button").forEach(b=>b.classList.toggle("on",b.dataset.v===CP.green));document.querySelectorAll("#rDist button").forEach(b=>b.classList.toggle("on",b.dataset.v===CP.red));
+  const cli=["python make_distinct_dataset.py"];if(CP.green!=="uniform")cli.push("--green gaussian --green-sigma "+CP.gs);if(CP.ng!==1445)cli.push("--n-green "+CP.ng);
+  if(CP.red!=="ring")cli.push("--red "+CP.red);if(CP.nr!==227)cli.push("--n-red "+CP.nr);if(CP.red!=="uniform")cli.push(`--center ${CP.cx} ${CP.cy}`);if(CP.red==="ring")cli.push("--radius "+CP.R);if(CP.red!=="uniform")cli.push("--sigma "+CP.rs);
+  if(CP.seed!==42)cli.push("--seed "+CP.seed);cli.push("--out my_data.csv");$("desCli").textContent=cli.join(" ")}
+let desM=null;
+function drawDes(){const cv=$("desCanvas");if(!cv)return;const{ctx,w,h}=setupCanvas(cv,0.86),pad=14,sc=Math.min((w-2*pad)/(FHI[0]-FLO[0]),(h-2*pad)/(FHI[1]-FLO[1])),ox=(w-sc*(FHI[0]-FLO[0]))/2,oy=(h-sc*(FHI[1]-FLO[1]))/2;
+  const px=x=>ox+(x-FLO[0])*sc,py=y=>h-oy-(y-FLO[1])*sc;desM={sc,ox,oy,h,inv:(X,Yv)=>[FLO[0]+(X-ox)/sc,FLO[1]+(h-oy-Yv)/sc]};
+  ctx.fillStyle=css("--surface-2");ctx.fillRect(0,0,w,h);
+  ctx.fillStyle=css("--border");for(let i=0;i<ORIG.N;i++){ctx.beginPath();ctx.arc(px(ORIG.RX[i]),py(ORIG.RY[i]),FPR*sc,0,7);ctx.fill()} // footprint
+  const D=DATASETS.custom,rr=Math.max(1.8,Math.min(3,w/260));
+  if(D){const R_=css("--red"),G_=css("--green");for(let i=0;i<D.RX.length;i++)mark(ctx,px(D.RX[i]),py(D.RY[i]),D.Y[i],D.Y[i]?R_:G_,D.Y[i]?rr*.95:rr*.75)}
+  const T_=css("--text");ctx.strokeStyle=T_;ctx.lineWidth=1.6;
+  if(CP.red==="ring")[[CP.R,[],.9],[CP.R-2*CP.rs,[4,4],.45],[CP.R+2*CP.rs,[4,4],.45]].forEach(([r,d,a])=>{if(r<=0)return;ctx.beginPath();ctx.arc(px(CP.cx),py(CP.cy),r*sc,0,7);ctx.setLineDash(d);ctx.globalAlpha=a;ctx.stroke()});
+  if(CP.red==="gaussian")[[CP.rs,[],.9],[2*CP.rs,[4,4],.45]].forEach(([r,d,a])=>{ctx.beginPath();ctx.arc(px(CP.cx),py(CP.cy),r*sc,0,7);ctx.setLineDash(d);ctx.globalAlpha=a;ctx.stroke()});
+  if(CP.green==="gaussian"){ctx.strokeStyle=css("--green");ctx.beginPath();ctx.arc(px(FCEN[0]),py(FCEN[1]),CP.gs*sc,0,7);ctx.setLineDash([6,4]);ctx.globalAlpha=.7;ctx.stroke()}
+  ctx.setLineDash([]);ctx.globalAlpha=1;
+  if(CP.red!=="uniform"){const x=px(CP.cx),y=py(CP.cy);ctx.strokeStyle=css("--surface");ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x-9,y);ctx.lineTo(x+9,y);ctx.moveTo(x,y-9);ctx.lineTo(x,y+9);ctx.stroke();
+    ctx.strokeStyle=css("--accent");ctx.lineWidth=2.4;ctx.stroke()}
+  $("desLegend").innerHTML=`<span><i style="background:var(--red)"></i>${T("red")}</span><span><i style="background:var(--green)"></i>${T("green")}</span>${CP.red==="ring"?`<span>◯ ${T("des_lg_ring")}</span>`:CP.red==="gaussian"?`<span>◯ ${T("des_lg_blob")}</span>`:""}${CP.green==="gaussian"?`<span style="color:var(--green)">◌ ${T("des_lg_gblob")}</span>`:""}${CP.red!=="uniform"?`<span style="color:var(--accent)">✛ ${T("des_lg_c")}</span>`:""}`}
+function renderDesTable(){const rows=METHODS.filter(m=>!m.only||m.only.includes("custom")),base=DES.base;
+  const done=rows.filter(m=>isFinite(DES[m.id])).sort((a,b)=>DES[b.id]-DES[a.id]),pend=rows.filter(m=>!(m.id in DES));
+  const bestFree=done.find(m=>!m.sup&&m.id!=="base");
+  let h=`<tr><th>${T("cmp_m")}</th><th>${T("des_th_f")}</th><th>${T("des_th_l")}</th></tr>`;
+  done.forEach(m=>{const f=DES[m.id],d=isFinite(base)?f-base:NaN,hl=bestFree&&m.id===bestFree.id;
+    h+=`<tr data-m="${m.id}" style="cursor:pointer${hl?";color:var(--good);font-weight:650":""}"><td>${mname(m)} ${m.sup?`<span class="tag sup">${T("tag_labels")}</span>`:""}</td><td>${f3(f)}</td><td style="color:${d>.01?"var(--good)":"var(--muted)"}">${m.id==="base"?"":(d>=0?"+":"")+num(d,3)}</td></tr>`});
+  pend.forEach(m=>h+=`<tr><td>${mname(m)}</td><td style="color:var(--faint)">…</td><td></td></tr>`);
+  const t=$("desTable");t.innerHTML=h;t.querySelectorAll("tr[data-m]").forEach(tr=>tr.onclick=()=>openCustom(tr.dataset.m))}
+function openCustom(mid){switchDataset("custom",true);if(mid){state.m=mid;state.frac=PR;renderMethods();renderControls();update()}location.hash="#lab"}
+function desRun(skipGen){const tok=++desTok;desT0=performance.now();$("desBusy").textContent=T("des_gen");
+  setTimeout(()=>{if(tok!==desTok)return;if(!skipGen)makeCustom();buildDataset("custom");DES={};drawDes();renderDesTable();
+    if(DS==="custom"){useDataset("custom");state.m=defaultMethod("custom");state.frac=PR;syncDs();problem();renderMethods();renderControls();redraw();results()}
+    const list=METHODS.filter(m=>!m.only||m.only.includes("custom"));let i=0;
+    const step=()=>{if(tok!==desTok)return;if(i>=list.length){$("desBusy").textContent=T("des_done",{s:num((performance.now()-desT0)/1000,1)});renderDesTable();if(CMP)compareTable();if(DS==="custom"){results();renderMethods()}return}
+      $("desBusy").textContent=T("des_cls",{i:i+1,n:list.length});const m=list[i++];const cur=DS;useDataset("custom");DES[m.id]=defaultF1(m.id);useDataset(cur);renderDesTable();setTimeout(step,0)};
+    setTimeout(step,0)},20)}
+function desChanged(){desUI();makeCustom();drawDes();clearTimeout(desTimer);if($("autoRun").checked)desTimer=setTimeout(()=>desRun(true),350)}
+[["s_ng","ng"],["s_gs","gs"],["s_nr","nr"],["s_R","R"],["s_rs","rs"],["s_seed","seed"]].forEach(([id,k])=>$(id).oninput=e=>{CP[k]=+e.target.value;desChanged()});
+document.querySelectorAll("#gDist button").forEach(b=>b.onclick=()=>{CP.green=b.dataset.v;desChanged()});
+document.querySelectorAll("#rDist button").forEach(b=>b.onclick=()=>{CP.red=b.dataset.v;if(CP.red==="gaussian"&&CP.rs<40)CP.rs=120;if(CP.red==="ring"&&CP.rs>80)CP.rs=15;desChanged()});
+$("desCanvas").addEventListener("click",e=>{if(!desM||CP.red==="uniform")return;const b=$("desCanvas").getBoundingClientRect(),[x,y]=desM.inv(e.clientX-b.left,e.clientY-b.top);
+  CP.cx=Math.round(Math.min(FHI[0],Math.max(FLO[0],x)));CP.cy=Math.round(Math.min(FHI[1],Math.max(FLO[1],y)));desUI();makeCustom();drawDes();clearTimeout(desTimer);if($("autoRun").checked)desRun(true)});
+$("desRun").onclick=()=>desRun(false);$("desReset").onclick=()=>{CP={...DEF_P};desChanged()};$("desOpen").onclick=()=>openCustom();
 
 /* ======================= init ======================= */
-if(DS==="dist")state.m="ring";
-applyLang();syncDs();problem();results("score");renderMethods();renderControls();redraw();
-setTimeout(()=>{METHODS.forEach(m=>{if(!m.only||m.only===DS)runMethod(m.id)});renderMethods();setTimeout(compareTable,30)},50);
+state.m=defaultMethod(DS);
+if(!DATASETS.custom)makeCustom();
+applyLang();desUI();syncDs();problem();results("score");renderMethods();renderControls();redraw();
+setTimeout(()=>{METHODS.forEach(m=>{if(!m.only||m.only.includes(DS))runMethod(m.id)});renderMethods();setTimeout(()=>{compareTable();desRun(true)},30)},50);
 </script>
 </body>
 </html>

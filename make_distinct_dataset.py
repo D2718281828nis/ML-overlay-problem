@@ -1,71 +1,106 @@
-"""Generate a variant of df_red_green_overlay.csv where red and green follow
-clearly different spatial distributions, while keeping the original footprint.
+"""Generate a red/green dataset with chosen spatial distributions, keeping the
+footprint of df_red_green_overlay.csv.
 
-* green: homogeneous Poisson process (= uniform density) inside the original
-  point cloud's footprint F. Count N_g ~ Poisson(1445), the original count.
-      p_green(x) = 1 / |F|                                  for x in F
-* red:   a noisy ring ("circle as the baseline"). 227 points with
-      theta ~ Uniform(0, 2*pi),   r ~ Normal(RING_R, RING_SIGMA^2)
-      x = centre + r * (cos theta, sin theta)
-  i.e. a Gaussian profile across the circle of radius RING_R; points that fall
-  outside F are re-drawn.
-      p_red(x) ~ N(|x - centre|; RING_R, RING_SIGMA^2) / (2*pi*|x - centre|)
+Footprint F = all locations within FOOTPRINT_R px of any original point (keeps the
+overall placement, including holes). Every generated point is drawn inside F
+(draws that land outside are redrawn).
 
-The footprint F is the set of locations within FOOTPRINT_R pixels of any original
-point, so the overall placement (shape, holes, extent) is preserved.
+Green distributions (--green):
+  uniform   homogeneous Poisson process: N_g ~ Poisson(n_green), x ~ Uniform(F)
+            p_g(x) = 1 / |F|
+  gaussian  isotropic Gaussian blob around --green-center, std --green-sigma
+            p_g(x) ~ N2(x; c_g, sigma_g^2 I)
 
-Usage:  python make_distinct_dataset.py   ->  writes df_red_green_distinct.csv
+Red distributions (--red):
+  ring      noisy circle: theta ~ U(0, 2pi), r ~ N(radius, sigma^2),
+            x = center + r (cos theta, sin theta)
+            p_r(x) ~ N(|x - c|; R, sigma^2) / (2 pi |x - c|)
+  gaussian  isotropic Gaussian blob around --center, std --sigma
+  uniform   x ~ Uniform(F)  (same as green: no signal at all)
+
+The defaults reproduce the committed df_red_green_distinct.csv exactly
+(uniform green, red ring R=350, sigma=15, centre (1046, 904), seed 42).
+
+Examples:
+  python make_distinct_dataset.py
+  python make_distinct_dataset.py --red gaussian --sigma 120 --center 800 700
+  python make_distinct_dataset.py --green gaussian --green-sigma 400 --red ring \
+      --radius 250 --sigma 25 --center 1200 1000 --out my_data.csv
+Then point the scripts at it:  OVERLAY_DATA=my_data.csv python overlay_clustering_advanced.py
 """
+import argparse
+
 import numpy as np
 import pandas as pd
 from scipy.spatial import cKDTree
 
-SEED = 42
-FOOTPRINT_R = 45.0      # px: how far from an original point still counts as "inside"
-RING_R = 350.0          # px: radius of the red circle (95% of it lies inside F)
-RING_SIGMA = 15.0       # px: std of the Gaussian profile across the circle
-N_RED = 227             # same as the original dataset
-GREEN_RATE = 1445       # Poisson mean for the green count (original count)
+FOOTPRINT_R = 45.0  # px: how far from an original point still counts as "inside"
 
-rng = np.random.default_rng(SEED)
-orig = pd.read_csv("df_red_green_overlay.csv")
-P = orig[["X", "Y"]].to_numpy(float)
+ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+ap.add_argument("--green", choices=["uniform", "gaussian"], default="uniform", help="green distribution")
+ap.add_argument("--n-green", type=float, default=1445, help="green count (Poisson mean for uniform, exact for gaussian)")
+ap.add_argument("--green-sigma", type=float, default=400.0, help="std of the green Gaussian, px")
+ap.add_argument("--green-center", type=float, nargs=2, metavar=("X", "Y"), default=None,
+                help="centre of the green Gaussian, px (default: footprint centre)")
+ap.add_argument("--red", choices=["ring", "gaussian", "uniform"], default="ring", help="red distribution")
+ap.add_argument("--n-red", type=int, default=227, help="red count")
+ap.add_argument("--center", type=float, nargs=2, metavar=("X", "Y"), default=None,
+                help="centre of the red ring / Gaussian, px (default: original point nearest the centroid, (1046, 904))")
+ap.add_argument("--radius", type=float, default=350.0, help="ring radius R, px")
+ap.add_argument("--sigma", type=float, default=15.0, help="ring width (std across the circle) or red Gaussian std, px")
+ap.add_argument("--seed", type=int, default=42)
+ap.add_argument("--source", default="df_red_green_overlay.csv", help="CSV whose footprint is kept")
+ap.add_argument("--out", default="df_red_green_distinct.csv")
+args = ap.parse_args()
+
+rng = np.random.default_rng(args.seed)
+P = pd.read_csv(args.source)[["X", "Y"]].to_numpy(float)
 tree = cKDTree(P)
 inside = lambda pts: tree.query(pts)[0] <= FOOTPRINT_R
-
 lo, hi = P.min(0) - FOOTPRINT_R, P.max(0) + FOOTPRINT_R
+default_center = P[tree.query(P.mean(0))[1]]
+center = np.array(args.center) if args.center else default_center
+green_center = np.array(args.green_center) if args.green_center else default_center
 
 
-def uniform_in_footprint(n):
+def draw_inside(sampler, n):
+    """Rejection sampling: keep drawing batches until n points fall inside F."""
     out = []
     while sum(len(o) for o in out) < n:
-        c = rng.uniform(lo, hi, size=(4 * n, 2))
+        c = sampler(4 * n)
         out.append(c[inside(c)])
     return np.vstack(out)[:n]
 
 
-# Ring centre: the original point closest to the centroid.
-centre = P[tree.query(P.mean(0))[1]]
+uniform = lambda m: rng.uniform(lo, hi, size=(m, 2))
 
 
-def ring_in_footprint(n):
-    out = []
-    while sum(len(o) for o in out) < n:
-        theta = rng.uniform(0, 2 * np.pi, size=4 * n)
-        r = rng.normal(RING_R, RING_SIGMA, size=4 * n)
-        c = centre + r[:, None] * np.c_[np.cos(theta), np.sin(theta)]
-        out.append(c[inside(c)])
-    return np.vstack(out)[:n]
+def blob(c, s):
+    return lambda m: rng.normal(c, s, size=(m, 2))
 
 
-green = uniform_in_footprint(rng.poisson(GREEN_RATE))
-red = ring_in_footprint(N_RED)
+def ring(c, R, s):
+    def sample(m):
+        theta = rng.uniform(0, 2 * np.pi, size=m)
+        r = rng.normal(R, s, size=m)
+        return c + r[:, None] * np.c_[np.cos(theta), np.sin(theta)]
+    return sample
 
-df = pd.DataFrame(
-    np.vstack([green, red]).round().astype(int), columns=["X", "Y"]
-)
+
+if args.green == "uniform":
+    green = draw_inside(uniform, rng.poisson(args.n_green))
+else:
+    green = draw_inside(blob(green_center, args.green_sigma), int(round(args.n_green)))
+
+red_sampler = {"ring": ring(center, args.radius, args.sigma),
+               "gaussian": blob(center, args.sigma),
+               "uniform": uniform}[args.red]
+red = draw_inside(red_sampler, args.n_red)
+
+df = pd.DataFrame(np.vstack([green, red]).round().astype(int), columns=["X", "Y"])
 df["Color"] = ["light_green"] * len(green) + ["red"] * len(red)
 df["Type"] = ["cross"] * len(green) + ["point"] * len(red)
-df.to_csv("df_red_green_distinct.csv", index=False)
+df.to_csv(args.out, index=False)
 
-print(f"green={len(green)}  red={len(red)}  ring centre={centre}  R={RING_R}  sigma={RING_SIGMA}")
+print(f"green={len(green)} ({args.green})  red={len(red)} ({args.red})  centre={center}  "
+      f"R={args.radius}  sigma={args.sigma}  seed={args.seed}  -> {args.out}")
