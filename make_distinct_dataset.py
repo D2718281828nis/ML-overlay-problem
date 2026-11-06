@@ -2,8 +2,9 @@
 footprint of df_red_green_overlay.csv.
 
 Footprint F = all locations within FOOTPRINT_R px of any original point (keeps the
-overall placement, including holes). Every generated point is drawn inside F
-(draws that land outside are redrawn).
+overall placement, including holes). Green points always live inside F (draws that
+land outside are redrawn). Red points follow their own distribution wherever it
+falls, also outside F, unless --clip-red is given (then they are redrawn too).
 
 Green distributions (--green):
   uniform   homogeneous Poisson process: N_g ~ Poisson(n_green), x ~ Uniform(F)
@@ -19,7 +20,7 @@ Red distributions (--red):
   uniform   x ~ Uniform(F)  (same as green: no signal at all)
 
 The defaults reproduce the committed df_red_green_distinct.csv exactly
-(uniform green, red ring R=350, sigma=15, centre (1046, 904), seed 42).
+(uniform green, unclipped red ring R=350, sigma=15, centre (1046, 904), seed 42).
 
 Examples:
   python make_distinct_dataset.py
@@ -48,6 +49,8 @@ ap.add_argument("--center", type=float, nargs=2, metavar=("X", "Y"), default=Non
                 help="centre of the red ring / Gaussian, px (default: original point nearest the centroid, (1046, 904))")
 ap.add_argument("--radius", type=float, default=350.0, help="ring radius R, px")
 ap.add_argument("--sigma", type=float, default=15.0, help="ring width (std across the circle) or red Gaussian std, px")
+ap.add_argument("--clip-red", action="store_true",
+                help="also keep red inside the green footprint (redraw red points that fall outside)")
 ap.add_argument("--seed", type=int, default=42)
 ap.add_argument("--source", default="df_red_green_overlay.csv", help="CSV whose footprint is kept")
 ap.add_argument("--out", default="df_red_green_distinct.csv")
@@ -95,7 +98,8 @@ else:
 red_sampler = {"ring": ring(center, args.radius, args.sigma),
                "gaussian": blob(center, args.sigma),
                "uniform": uniform}[args.red]
-red = draw_inside(red_sampler, args.n_red)
+# uniform red means Uniform(F), so it always stays inside the footprint
+red = draw_inside(red_sampler, args.n_red) if (args.clip_red or args.red == "uniform") else red_sampler(args.n_red)
 
 df = pd.DataFrame(np.vstack([green, red]).round().astype(int), columns=["X", "Y"])
 df["Color"] = ["light_green"] * len(green) + ["red"] * len(red)
@@ -103,4 +107,5 @@ df["Type"] = ["cross"] * len(green) + ["point"] * len(red)
 df.to_csv(args.out, index=False)
 
 print(f"green={len(green)} ({args.green})  red={len(red)} ({args.red})  centre={center}  "
-      f"R={args.radius}  sigma={args.sigma}  seed={args.seed}  -> {args.out}")
+      f"R={args.radius}  sigma={args.sigma}  clip_red={args.clip_red}  seed={args.seed}  -> {args.out}")
+print(f"red points outside the green footprint: {int((~inside(red)).sum())}")

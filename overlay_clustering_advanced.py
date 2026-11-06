@@ -251,13 +251,101 @@ print("\nConfusion Matrix:")
 print(confusion_matrix(true_labels, ensemble_labels))
 
 # ============================================================================
+# METHOD 8: t-SNE EMBEDDING + CLASSIFICATION
+# ============================================================================
+# t-SNE maps the (standardised) points to a 2-D embedding that keeps local
+# neighbourhoods. Two ways to turn the map into red/green labels:
+#   8a. t-SNE + k-NN density (label-free): score = minus the distance to the k-th
+#       neighbour IN THE MAP; flag the densest points. As many points are flagged
+#       as the expected red share (the same prior the notebook's LNND uses).
+#   8b. t-SNE + DBSCAN (the notebook's pipeline): cluster the map; the cluster with
+#       the best F1 is called red. Picking that cluster USES THE LABELS.
+# Caveat: t-SNE calibrates every point to the same perplexity, which evens out
+# density, so a dense red shape loses most of its density advantage in the map.
+print("\n" + "="*70)
+print("METHOD 8: t-SNE EMBEDDING + CLASSIFICATION")
+print("="*70)
+
+from sklearn.cluster import DBSCAN
+from sklearn.neighbors import NearestNeighbors
+
+TSNE_PERPLEXITY = 30
+TSNE_K = 10                      # neighbour used for the density score
+TSNE_EPS, TSNE_MIN_SAMPLES = 2.75, 10
+
+X_std = StandardScaler().fit_transform(X)
+tsne_map = TSNE(n_components=2, perplexity=TSNE_PERPLEXITY, init='pca',
+                random_state=42).fit_transform(X_std)
+n_flag = int(round(true_labels.mean() * len(X)))   # expected number of red points (prior)
+
+
+def knn_density(points, k):
+    """Minus the distance to the k-th nearest neighbour (higher = denser)."""
+    dist, _ = NearestNeighbors(n_neighbors=k + 1).fit(points).kneighbors(points)
+    return -dist[:, k]
+
+
+def flag_top(score, n):
+    labels = np.zeros(len(score), dtype=int)
+    labels[np.argsort(-score)[:n]] = 1
+    return labels
+
+
+# 8a. label-free: densest points of the t-SNE map
+tsne_density_labels = flag_top(knn_density(tsne_map, TSNE_K), n_flag)
+tsne_density_f1 = f1_score(true_labels, tsne_density_labels)
+# reference: the same score on the raw coordinates
+raw_density_f1 = f1_score(true_labels, flag_top(knn_density(X_std, TSNE_K), n_flag))
+print(f"\n8a. t-SNE + k-NN density (no labels, flag top {n_flag})")
+print(f"F1 Score: {tsne_density_f1:.4f}   (same score on raw X, Y: {raw_density_f1:.4f})")
+print(f"Precision: {precision_score(true_labels, tsne_density_labels):.4f}")
+print(f"Recall: {recall_score(true_labels, tsne_density_labels):.4f}")
+print("Confusion Matrix:")
+print(confusion_matrix(true_labels, tsne_density_labels))
+
+# 8b. DBSCAN on the map, red cluster picked by F1 (uses labels)
+db_labels = DBSCAN(eps=TSNE_EPS, min_samples=TSNE_MIN_SAMPLES).fit_predict(tsne_map)
+clusters = [c for c in np.unique(db_labels) if c >= 0]
+tsne_dbscan_labels = np.zeros(len(X), dtype=int)
+if clusters:
+    best_c = max(clusters, key=lambda c: f1_score(true_labels, (db_labels == c).astype(int)))
+    tsne_dbscan_labels = (db_labels == best_c).astype(int)
+tsne_dbscan_f1 = f1_score(true_labels, tsne_dbscan_labels)
+print(f"\n8b. t-SNE + DBSCAN (eps={TSNE_EPS}, min_samples={TSNE_MIN_SAMPLES}; "
+      f"{len(clusters)} clusters; red cluster picked by F1 -> USES LABELS)")
+print(f"F1 Score: {tsne_dbscan_f1:.4f}")
+print(f"Precision: {precision_score(true_labels, tsne_dbscan_labels, zero_division=0):.4f}")
+print(f"Recall: {recall_score(true_labels, tsne_dbscan_labels):.4f}")
+print("Confusion Matrix:")
+print(confusion_matrix(true_labels, tsne_dbscan_labels))
+
+fig, axes = plt.subplots(1, 3, figsize=(18, 5.5))
+for ax, labels, title in [(axes[0], true_labels, "t-SNE map: ground truth"),
+                          (axes[1], tsne_density_labels, f"t-SNE + k-NN density (F1 {tsne_density_f1:.3f})"),
+                          (axes[2], tsne_dbscan_labels, f"t-SNE + DBSCAN, labels pick cluster (F1 {tsne_dbscan_f1:.3f})")]:
+    ax.scatter(tsne_map[labels == 0, 0], tsne_map[labels == 0, 1], c='green', alpha=0.5, s=12, label='Green')
+    ax.scatter(tsne_map[labels == 1, 0], tsne_map[labels == 1, 1], c='red', alpha=0.7, s=12, label='Red')
+    wrong = labels != true_labels
+    if labels is not true_labels and wrong.any():
+        ax.scatter(tsne_map[wrong, 0], tsne_map[wrong, 1], marker='D', s=40, facecolors='none',
+                   edgecolors='gold', linewidths=1.2, label='Wrong prediction')
+    ax.set_title(title, fontweight='bold')
+    ax.set_xlabel('t-SNE 1')
+    ax.set_ylabel('t-SNE 2')
+    ax.legend(fontsize=8)
+plt.tight_layout()
+plt.savefig('tsne_classification.png', dpi=150, bbox_inches='tight')
+print("\n✓ Saved: tsne_classification.png")
+plt.show()
+
+# ============================================================================
 # VISUALIZATION
 # ============================================================================
 print("\n" + "="*70)
 print("GENERATING VISUALIZATIONS")
 print("="*70)
 
-fig, axes = plt.subplots(2, 4, figsize=(18, 10))
+fig, axes = plt.subplots(3, 4, figsize=(18, 14))
 fig.suptitle('Overlay Clustering: Different Methods Comparison', fontsize=16, fontweight='bold')
 
 methods = [
@@ -268,6 +356,8 @@ methods = [
     (best_labels, f"GMM ({best_cov})", "F1: {:.4f}".format(best_f1)),
     (density_labels_opt, "Soft GMM + Threshold", "F1: {:.4f}".format(density_f1_opt)),
     (ensemble_labels, "Ensemble Vote", "F1: {:.4f}".format(ensemble_f1)),
+    (tsne_density_labels, "t-SNE + k-NN density", "F1: {:.4f}".format(tsne_density_f1)),
+    (tsne_dbscan_labels, "t-SNE + DBSCAN (labels)", "F1: {:.4f}".format(tsne_dbscan_f1)),
     (true_labels, "Ground Truth", "Reference")
 ]
 
@@ -283,6 +373,9 @@ for idx, (labels, title, score) in enumerate(methods):
     ax.set_title(f"{title}\n{score}", fontsize=10, fontweight='bold')
     ax.grid(True, alpha=0.3)
     ax.legend(fontsize=8)
+
+for ax in axes.flat[len(methods):]:
+    ax.axis('off')
 
 plt.tight_layout()
 plt.savefig('overlay_clustering_comparison.png', dpi=150, bbox_inches='tight')
@@ -336,8 +429,10 @@ print("="*70)
 
 results_data = {
     'Method': ['GMM (Full)', 'Spectral Clustering', 'Kernel K-Means', 
-               'Isolation Forest', f'GMM ({best_cov})', 'Soft GMM + Threshold', 'Ensemble'],
-    'F1 Score': [gmm_f1, spectral_f1, kernel_f1, iso_f1, best_f1, density_f1_opt, ensemble_f1],
+               'Isolation Forest', f'GMM ({best_cov})', 'Soft GMM + Threshold', 'Ensemble',
+               't-SNE + k-NN density', 't-SNE + DBSCAN (uses labels)'],
+    'F1 Score': [gmm_f1, spectral_f1, kernel_f1, iso_f1, best_f1, density_f1_opt, ensemble_f1,
+                 tsne_density_f1, tsne_dbscan_f1],
     'Precision': [
         precision_score(true_labels, gmm_labels),
         precision_score(true_labels, spectral_labels),
@@ -345,7 +440,9 @@ results_data = {
         precision_score(true_labels, iso1_labels),
         precision_score(true_labels, best_labels),
         precision_score(true_labels, density_labels_opt),
-        precision_score(true_labels, ensemble_labels)
+        precision_score(true_labels, ensemble_labels),
+        precision_score(true_labels, tsne_density_labels),
+        precision_score(true_labels, tsne_dbscan_labels, zero_division=0)
     ],
     'Recall': [
         recall_score(true_labels, gmm_labels),
@@ -354,7 +451,9 @@ results_data = {
         recall_score(true_labels, iso1_labels),
         recall_score(true_labels, best_labels),
         recall_score(true_labels, density_labels_opt),
-        recall_score(true_labels, ensemble_labels)
+        recall_score(true_labels, ensemble_labels),
+        recall_score(true_labels, tsne_density_labels),
+        recall_score(true_labels, tsne_dbscan_labels)
     ]
 }
 
