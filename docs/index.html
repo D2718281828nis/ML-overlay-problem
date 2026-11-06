@@ -137,7 +137,11 @@ ol.take{padding-left:20px;max-width:78ch} ol.take li{margin:8px 0}
 table.compact td,table.compact th{padding:5px 6px;font-size:12.5px}
 .seg button:disabled{opacity:.4;cursor:not-allowed}
 .swnote{font-size:12.5px;color:var(--muted);background:var(--accent-soft);border-left:3px solid var(--accent);padding:8px 10px;border-radius:0 8px 8px 0;margin-bottom:14px}
-table.compact tr.cur td{background:var(--accent-soft)}table.compact tr[data-m]:hover td{background:var(--surface-2)}
+table.compact tr.cur td{background:var(--accent-soft)}tr.case td{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);padding-top:12px;font-weight:600}
+.caseSeg{display:flex;margin-bottom:6px}.caseSeg button{flex:1;padding:8px 6px;font-size:13px}
+.casehint{margin-bottom:6px}
+.mbtn{display:block}.mbtn .mt{display:flex;justify-content:space-between;gap:8px;align-items:center}.mbtn .ms,td .ms{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.35;font-weight:400}
+table.compact tr[data-m]:hover td{background:var(--surface-2)}
 footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px solid var(--border)}
 </style>
 <body>
@@ -360,6 +364,7 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
 <script>
 /* ======================= i18n ======================= */
 const I18N={en:{
+case_unsup:"Unsupervised learning",case_sup:"Supervised learning",case_unsup_h:"The method sees only X, Y. The colours are used only to score the result.",case_sup_h:"The method uses the true colours: to train a classifier (scored on held-out points), to choose the red cluster, or, for the Bayes optimum, the generator itself.",g_clf:"Classifiers trained on labels",g_lsel:"Clustering, labels pick the cluster",p_deg:"polynomial degree",p_logc:"log₁₀ C (higher = weaker regularisation)",mn_lr:"Logistic regression",mn_qda:"QDA (Gaussian per colour)",md_lr:"<b>Supervised.</b> Logistic regression on all polynomial features of X, Y up to the chosen degree, with balanced class weights and a little L2 regularisation. Scored by 5-fold cross-validation: every point is predicted by a model that never saw it. Degree 1 is a straight line and degree 2 a disk or ellipse; a ring needs degree 4 (r⁴ terms) to be enclosed from inside and outside. <b>Regularisation matters:</b> the ring is thin, so the coefficients must be large. With scikit-learn's default C = 1 (log₁₀ C = 0) F1 on the distinct data is about 0.07; with C = 10⁴ it is about 0.76, close to the Bayes ceiling.",md_qda:"<b>Supervised.</b> Quadratic discriminant analysis: fit one Gaussian to the red points and one to the green points of the training folds, then use Bayes' rule. It is the textbook supervised method, and exactly right when both colours are Gaussian blobs. It cannot describe a ring or a flat background, so it is not the right model for this data. Scored by 5-fold cross-validation.",ms_base:"Flags every point red. The floor any method must beat.",ms_km:"Two centroids and a straight cut between them. Ignores shape.",ms_gmm:"Two Gaussian blobs fitted by EM; posterior of one of them.",ms_ring:"EM fit of a noisy circle + uniform background. The right model for a ring.",ms_gu:"EM fit of one Gaussian blob + uniform background. The right model for a blob.",ms_fcm:"Soft K-Means: fuzzy membership in two centres.",ms_db:"Density-connected clusters; everything outside the largest one is red.",ms_kdd:"Dense neighbourhood → red. Works when red is concentrated.",ms_kd:"Sparse neighbourhood → red. Best label-free score on the original data.",ms_lnnd:"Sparser than its own neighbours → red (relative k-NN distance).",ms_lof:"Local Outlier Factor: the classic local-density outlier score.",ms_tsnek:"Density measured in the t-SNE map instead of X–Y.",ms_bayes:"Knows the true data generator (shape, parameters). A theoretical limit, not a real method.",ms_lr:"Polynomial logistic regression trained on the colours; 5-fold CV.",ms_qda:"One Gaussian per colour, learned from labels; 5-fold CV.",ms_sup:"Share of red among the k nearest neighbours (leave-one-out).",ms_tsne:"t-SNE map + DBSCAN; the true colours choose which cluster is red.",
 des_sub:"<b>Design your own data.</b> Choose how green and red points are distributed, and <b>click the map to place the centre</b> of the red circle or blob. The whole page follows: the map, the numbers above, the table on the right and the <a href=\"#lab\">interactive lab</a> switch to your custom data, and every classifier reruns. Choosing a method in the lab highlights it here, and clicking a row here opens it in the lab. The generator is the same as <code>make_distinct_dataset.py</code>; the browser uses its own random numbers, so individual points differ from the Python output, but the distributions are identical.",des_map:"Current dataset · click to set the red centre",des_res:"Classification on “{ds}”",des_res_hint:"Default parameters. Highlighted row = method open in the lab. Click a row to open it there.",des_hint_switch:"The page currently shows “{ds}”. Changing any setting or clicking the map switches everything, the lab included, to your custom data.",des_unclassified:"Settings changed. Press “Generate & classify” to update the lab and this table.",des_lg_blind:"unlabelled: what a method sees",
 nav_designer:"Designer",ds_custom_short:"Custom",ds_custom_long:"Custom (designer)",
 ds_hero_custom:"Custom dataset from the designer",ds_note_custom:"Generated in your browser: {desc}. Every section below follows this switch.",ds_name_custom:"Dataset: custom ({desc})",
@@ -481,6 +486,7 @@ take_list:"<li><b>Always report the trivial baseline.</b> On the original data �
 footer:"ML-overlay-problem · <a href=\"https://github.com/D2718281828nis/ML-overlay-problem\">GitHub</a> · <a href=\"https://colab.research.google.com/github/D2718281828nis/ML-overlay-problem/blob/main/case_study-unsupervised-overlay-problem.ipynb\">Open notebook in Colab</a> · All computations on this page run client-side on the embedded CSVs."
 },
 ru:{
+case_unsup:"Обучение без учителя",case_sup:"Обучение с учителем",case_unsup_h:"Метод видит только X, Y. Цвета используются только для оценки результата.",case_sup_h:"Метод использует истинные цвета: чтобы обучить классификатор (оценка на отложенных точках), чтобы выбрать красный кластер или, как байесовский оптимум, знает сам генератор.",g_clf:"Классификаторы, обученные на метках",g_lsel:"Кластеризация, кластер выбирают метки",p_deg:"степень полинома",p_logc:"log₁₀ C (больше = слабее регуляризация)",mn_lr:"Логистическая регрессия",mn_qda:"QDA (гауссиана на цвет)",md_lr:"<b>С учителем.</b> Логистическая регрессия на всех полиномиальных признаках X, Y до выбранной степени, со сбалансированными весами классов и небольшой L2-регуляризацией. Оценка 5-кратной кросс-валидацией: каждую точку предсказывает модель, которая её не видела. Степень 1 — прямая, степень 2 — круг или эллипс; чтобы охватить кольцо изнутри и снаружи, нужна степень 4 (члены r⁴). <b>Регуляризация важна:</b> кольцо тонкое, поэтому коэффициенты должны быть большими. При C = 1 по умолчанию в scikit-learn (log₁₀ C = 0) F1 на различимых данных около 0,07, при C = 10⁴ — около 0,76, почти байесовский потолок.",md_qda:"<b>С учителем.</b> Квадратичный дискриминантный анализ: по одной гауссиане для красных и для зелёных точек обучающих фолдов, затем правило Байеса. Классический метод обучения с учителем, точный, когда оба цвета — гауссовы облака. Кольцо и равномерный фон он описать не может, поэтому для этих данных модель неверная. Оценка 5-кратной кросс-валидацией.",ms_base:"Все точки — красные. Нижняя планка, которую должен превзойти любой метод.",ms_km:"Два центроида и прямой разрез между ними. Форму не учитывает.",ms_gmm:"Две гауссианы, подобранные EM; вероятность одной из них.",ms_ring:"EM-подгонка зашумлённой окружности и равномерного фона. Верная модель для кольца.",ms_gu:"EM-подгонка одного гауссова облака и фона. Верная модель для облака.",ms_fcm:"Мягкий K-Means: нечёткая принадлежность к двум центрам.",ms_db:"Связные по плотности кластеры; всё вне самого большого — красное.",ms_kdd:"Плотная окрестность → красный. Работает, когда красные сосредоточены.",ms_kd:"Разреженная окрестность → красный. Лучшая оценка без меток на исходных данных.",ms_lnnd:"Разреженнее своих соседей → красный (относительное расстояние k-NN).",ms_lof:"Local Outlier Factor: классическая оценка выбросов по локальной плотности.",ms_tsnek:"Плотность, измеренная на карте t-SNE, а не в X–Y.",ms_bayes:"Знает истинный генератор данных (форму, параметры). Теоретический предел, а не реальный метод.",ms_lr:"Полиномиальная логистическая регрессия, обученная на цветах; 5-кратная CV.",ms_qda:"По одной гауссиане на цвет, обученной по меткам; 5-кратная CV.",ms_sup:"Доля красных среди k ближайших соседей (без самой точки).",ms_tsne:"Карта t-SNE + DBSCAN; какой кластер красный, решают истинные цвета.",
 des_sub:"<b>Создайте свои данные.</b> Выберите, как распределены зелёные и красные точки, и <b>щёлкните по карте, чтобы задать центр</b> красной окружности или облака. Вся страница следует за этим: карта, числа выше, таблица справа и <a href=\"#lab\">интерактивная лаборатория</a> переключаются на ваш датасет, и все классификаторы перезапускаются. Выбор метода в лаборатории подсвечивает его здесь, а щелчок по строке здесь открывает его в лаборатории. Генератор тот же, что и <code>make_distinct_dataset.py</code>; браузер использует свой генератор случайных чисел, поэтому отдельные точки отличаются от результата Python, но распределения те же.",des_map:"Текущий датасет · щёлкните, чтобы задать центр красных",des_res:"Классификация на «{ds}»",des_res_hint:"Параметры по умолчанию. Подсвеченная строка — метод, открытый в лаборатории. Щёлкните строку, чтобы открыть его там.",des_hint_switch:"Сейчас на странице «{ds}». Любое изменение настроек или щелчок по карте переключит всё, включая лабораторию, на ваш датасет.",des_unclassified:"Настройки изменены. Нажмите «Сгенерировать и классифицировать», чтобы обновить лабораторию и эту таблицу.",des_lg_blind:"без меток: так видит метод",
 nav_designer:"Конструктор",ds_custom_short:"Свой",ds_custom_long:"Свой (конструктор)",
 ds_hero_custom:"Свой датасет из конструктора",ds_note_custom:"Сгенерирован в браузере: {desc}. Все разделы ниже следуют этому переключателю.",ds_name_custom:"Датасет: свой ({desc})",
@@ -838,6 +844,33 @@ function embDensity(E,k){const n=E.x.length,s=new Float64Array(n),bd=new Float64
   for(let i=0;i<n;i++){bd.fill(Infinity);for(let j=0;j<n;j++){if(j===i)continue;const v=(E.x[i]-E.x[j])**2+(E.y[i]-E.y[j])**2;if(v<bd[k-1]){let p=k-1;while(p>0&&bd[p-1]>v){bd[p]=bd[p-1];p--}bd[p]=v}}s[i]=-Math.sqrt(bd[k-1])}return s}
 const srcNote=(E,perp)=>T(E.src==="sk"?"tsne_src_sk":"tsne_src_js",{p:perp});
 
+
+/* ---- supervised classifiers, scored out-of-sample by stratified 5-fold CV ---- */
+function folds5(){const R=rng(11),f=new Int8Array(N);for(const c of [0,1]){const idx=[];for(let i=0;i<N;i++)if(Y[i]===c)idx.push(i);
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]]}idx.forEach((i,k)=>f[i]=k%5)}return f}
+function solveN(A,b){const n=b.length,M=A.map((r,i)=>[...r,b[i]]);for(let c=0;c<n;c++){let p=c;for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r;if(Math.abs(M[p][c])<1e-12)return null;[M[c],M[p]]=[M[p],M[c]];
+  for(let r=0;r<n;r++)if(r!==c){const q=M[r][c]/M[c][c];if(q)for(let k=c;k<=n;k++)M[r][k]-=q*M[c][k]}}return M.map((r,i)=>r[n]/r[i])}
+function polyFeat(deg){const F=[];for(let d=1;d<=deg;d++)for(let a=d;a>=0;a--){const b=d-a;F.push(Float64Array.from(ZX,(x,i)=>x**a*ZY[i]**b))}return F}
+function logregCV(deg,logC){const F=polyFeat(deg),d=F.length+1,fold=folds5(),out=new Float64Array(N),C=10**logC; // sklearn-style C: loss·C + ½‖β‖²
+  for(let k=0;k<5;k++){const tr=[],te=[];for(let i=0;i<N;i++)(fold[i]===k?te:tr).push(i);
+    const mu=F.map(f=>tr.reduce((s,i)=>s+f[i],0)/tr.length),sd=F.map((f,j)=>Math.sqrt(tr.reduce((s,i)=>s+(f[i]-mu[j])**2,0)/tr.length)||1);
+    const row=i=>{const r=new Float64Array(d);r[0]=1;for(let j=0;j<F.length;j++)r[j+1]=(F[j][i]-mu[j])/sd[j];return r};
+    const Xt=tr.map(row),yt=tr.map(i=>Y[i]),nr=yt.reduce((a,b)=>a+b,0),wr=tr.length/(2*nr),wg=tr.length/(2*(tr.length-nr));let beta=new Float64Array(d);
+    for(let it=0;it<100;it++){const H=Array.from({length:d},()=>new Float64Array(d)),g=new Float64Array(d);
+      for(let q=0;q<Xt.length;q++){const x=Xt[q];let z=0;for(let j=0;j<d;j++)z+=beta[j]*x[j];const pr=1/(1+Math.exp(-z)),w=yt[q]?wr:wg,s=w*pr*(1-pr),e=w*(yt[q]-pr);
+        for(let a=0;a<d;a++){g[a]+=e*x[a];const sa=s*x[a];for(let b=a;b<d;b++)H[a][b]+=sa*x[b]}}
+      for(let a=0;a<d;a++){for(let b=0;b<a;b++)H[a][b]=H[b][a];if(a){H[a][a]+=1/C;g[a]-=beta[a]/C}}
+      const step=solveN(H.map(r=>Array.from(r)),Array.from(g));if(!step)break;let mx=0;for(let j=0;j<d;j++)mx=Math.max(mx,Math.abs(step[j]));const damp=mx>10?10/mx:1; // damped Newton: stable when regularisation is weak
+      for(let j=0;j<d;j++)beta[j]+=damp*step[j];if(mx<1e-6)break}
+    for(const i of te){const x=row(i);let z=0;for(let j=0;j<d;j++)z+=beta[j]*x[j];out[i]=1/(1+Math.exp(-z))}}
+  return out}
+function qdaCV(){const fold=folds5(),out=new Float64Array(N);
+  for(let k=0;k<5;k++){const P=[0,1].map(c=>{let n=0,ax=0,ay=0;for(let i=0;i<N;i++)if(fold[i]!==k&&Y[i]===c){n++;ax+=ZX[i];ay+=ZY[i]}ax/=n;ay/=n;let a=0,b=0,e=0;
+      for(let i=0;i<N;i++)if(fold[i]!==k&&Y[i]===c){const dx=ZX[i]-ax,dy=ZY[i]-ay;a+=dx*dx;b+=dx*dy;e+=dy*dy}return{n,ax,ay,a:a/n+1e-6,b:b/n,e:e/n+1e-6}});
+    const tot=P[0].n+P[1].n,lp=(c,i)=>{const q=P[c],det=q.a*q.e-q.b*q.b,dx=ZX[i]-q.ax,dy=ZY[i]-q.ay;return Math.log(q.n/tot)-.5*Math.log(det)-.5*(q.e*dx*dx-2*q.b*dx*dy+q.a*dy*dy)/det};
+    for(let i=0;i<N;i++)if(fold[i]===k){const l1=lp(1,i),l0=lp(0,i),m=Math.max(l0,l1);out[i]=Math.exp(l1-m)/(Math.exp(l0-m)+Math.exp(l1-m))}}
+  return out}
+
 /* ======================= method registry ======================= */
 const METHODS=[
  {id:"base",grp:"g_ref",type:"hard",params:[],run:()=>({pred:new Uint8Array(N).fill(1)})},
@@ -855,13 +888,19 @@ const METHODS=[
  {id:"kd",grp:"g_loc",type:"score",params:[{k:"k",l:"k",min:1,max:50,v:10}],run:p=>({score:kdist(p.k)})},
  {id:"lnnd",grp:"g_loc",type:"score",params:[{k:"k",l:"k",min:2,max:50,v:10}],run:p=>({score:lnnd(p.k)})},
  {id:"lof",grp:"g_loc",type:"score",params:[{k:"k",l:"k",min:2,max:50,v:20}],run:p=>({score:lof(p.k)})},
- {id:"tsne",grp:"g_emb",type:"hard",sup:true,params:[{k:"perp",l:"p_perp",min:5,max:50,step:5,v:30},{k:"eps",l:"p_epst",min:1,max:8,step:.25,v:2.75},{k:"minPts",l:"p_minpts",min:3,max:40,v:10}],
+ {id:"tsne",grp:"g_lsel",type:"hard",sup:true,params:[{k:"perp",l:"p_perp",min:5,max:50,step:5,v:30},{k:"eps",l:"p_epst",min:1,max:8,step:.25,v:2.75},{k:"minPts",l:"p_minpts",min:3,max:40,v:10}],
   run:p=>{const E=getEmb(p.perp);if(!E)return{pending:true};const r=dbscan(p.eps,p.minPts,E.x,E.y);let best=new Uint8Array(N),bf=-1,bc=-1;for(let c=0;c<r.nc;c++){const pr=Uint8Array.from(r.lab,l=>l===c?1:0),f=confusion(pr).f;if(f>bf){bf=f;best=pr;bc=c}}
     return{pred:best,noteK:"note_tsne",noteV:{nc:r.nc,noise:r.lab.filter(l=>l<0).length,c:bc,src:srcNote(E,p.perp)}}}},
  {id:"tsnek",grp:"g_emb",type:"score",params:[{k:"perp",l:"p_perp",min:5,max:50,step:5,v:30},{k:"k",l:"k",min:1,max:50,v:10}],
   run:p=>{const E=getEmb(p.perp);if(!E)return{pending:true};return{score:embDensity(E,p.k),noteK:"note_tsnek",noteV:{src:srcNote(E,p.perp)}}}},
- {id:"sup",grp:"g_sup",type:"score",sup:true,params:[{k:"k",l:"k",min:1,max:50,v:15}],run:p=>({score:knnSup(p.k)})}
+ {id:"sup",grp:"g_clf",type:"score",sup:true,params:[{k:"k",l:"k",min:1,max:50,v:15}],run:p=>({score:knnSup(p.k)})},
+ {id:"lr",grp:"g_clf",type:"score",sup:true,params:[{k:"deg",l:"p_deg",min:1,max:6,v:4},{k:"logC",l:"p_logc",min:-2,max:6,step:.5,v:4}],run:p=>({score:logregCV(p.deg,p.logC)})},
+ {id:"qda",grp:"g_clf",type:"score",sup:true,params:[],run:()=>({score:qdaCV()})}
 ];
+// unsupervised first, then supervised; groups stay contiguous
+const ORDER=["base","km","gmm","ring","gu","fcm","db","kdd","kd","lnnd","lof","tsnek","bayes","lr","qda","sup","tsne"];
+METHODS.sort((a,b)=>ORDER.indexOf(a.id)-ORDER.indexOf(b.id));
+const caseOf=m=>m.sup?"sup":"unsup";
 const mname=m=>T("mn_"+m.id);
 
 /* ======================= lab state ======================= */
@@ -874,10 +913,13 @@ function predOf(r){if(r.pending)return new Uint8Array(N);if(r.pred)return r.pred
 
 const mEl=document.getElementById("methods");
 function bestF1(id){const r=runMethod(id);if(r.pending)return NaN;if(r.pred)return confusion(r.pred).f;return r.curve.f[Math.round(PR*N)]}
-function renderMethods(){mEl.innerHTML="";let g="";
-  METHODS.filter(m=>!m.only||m.only.includes(DS)).forEach(m=>{if(m.grp!==g){g=m.grp;const d=document.createElement("div");d.className="grp";d.textContent=T(g);mEl.appendChild(d)}
+function renderMethods(){const cur=METHODS.find(x=>x.id===state.m),cs=caseOf(cur);
+  mEl.innerHTML=`<div class="seg caseSeg">${["unsup","sup"].map(c=>`<button data-c="${c}" class="${c===cs?"on":""}">${T("case_"+c)}</button>`).join("")}</div><div class="hint casehint">${T("case_"+cs+"_h")}</div>`;
+  mEl.querySelectorAll(".caseSeg button").forEach(b=>b.onclick=()=>{if(b.dataset.c===cs)return;state.m=b.dataset.c==="sup"?"lr":defaultMethod(DS);const m=METHODS.find(x=>x.id===state.m);if(m.type==="score")state.frac=PR;renderMethods();renderControls();update()});
+  let g="";
+  METHODS.filter(m=>(!m.only||m.only.includes(DS))&&caseOf(m)===cs).forEach(m=>{if(m.grp!==g){g=m.grp;const d=document.createElement("div");d.className="grp";d.textContent=T(g);mEl.appendChild(d)}
     const b=document.createElement("button");b.className="mbtn"+(m.id===state.m?" on":"");
-    b.innerHTML=`<span>${mname(m)}</span><span style="display:flex;gap:6px;align-items:center">${m.sup?`<span class="tag sup">${T("tag_labels")}</span>`:""}<span class="f" id="mf_${m.id}"></span></span>`;
+    b.innerHTML=`<span class="mt"><span>${mname(m)}</span><span class="f" id="mf_${m.id}"></span></span><span class="ms">${T("ms_"+m.id)}</span>`;
     b.onclick=()=>{state.m=m.id;if(m.type==="score")state.frac=PR;renderMethods();renderControls();update()};mEl.appendChild(b)});
   METHODS.forEach(m=>{const k=DS+m.id+JSON.stringify(state.params[m.id]);if(cache[k]){const el=document.getElementById("mf_"+m.id);if(el)el.textContent=f3(bestF1(m.id))}})}
 function renderControls(){const m=METHODS.find(x=>x.id===state.m),c=document.getElementById("controls");c.innerHTML="";
@@ -1055,7 +1097,8 @@ function defaultF1(id){const m=METHODS.find(x=>x.id===id);if(m.only&&!m.only.inc
 function compareTable(){if(!CMP){const cur=DS;CMP={};for(const d of ["orig","dist"]){useDataset(d);CMP[d]={};METHODS.forEach(m=>CMP[d][m.id]=defaultF1(m.id))}useDataset(cur)}
   const hasC=Object.keys(DES).length>0;
   let h=`<tr><th>${T("cmp_m")}</th><th>${T("cmp_o")}</th><th>${T("cmp_d")}</th>${hasC?`<th>${T("cmp_c")}</th>`:""}</tr>`;
-  METHODS.forEach(m=>{const a=CMP.orig[m.id],b=CMP.dist[m.id],c=DES[m.id],best=b>=.6;h+=`<tr data-m="${m.id}" style="cursor:pointer"><td>${mname(m)} ${m.sup?`<span class="tag sup">${T("tag_labels")}</span>`:""}</td><td>${f3(a)}</td><td style="${best?"color:var(--good);font-weight:650":""}">${f3(b)}</td>${hasC?`<td>${f3(c)}</td>`:""}</tr>`});
+  for(const cs of ["unsup","sup"]){h+=`<tr class="case"><td colspan="${hasC?4:3}">${T("case_"+cs)}</td></tr>`;
+    METHODS.filter(m=>caseOf(m)===cs).forEach(m=>{const a=CMP.orig[m.id],b=CMP.dist[m.id],c=DES[m.id],best=b>=.6;h+=`<tr data-m="${m.id}" title="${T("ms_"+m.id)}" style="cursor:pointer"><td>${mname(m)}<div class="ms">${T("ms_"+m.id)}</div></td><td>${f3(a)}</td><td style="${best?"color:var(--good);font-weight:650":""}">${f3(b)}</td>${hasC?`<td>${f3(c)}</td>`:""}</tr>`})}
   renderDesTable();const t=document.getElementById("cmpTable");t.innerHTML=h;t.querySelectorAll("tr[data-m]").forEach(tr=>tr.onclick=()=>{switchDataset("dist");state.m=tr.dataset.m;state.frac=PR;renderMethods();renderControls();update();location.hash="#lab"})}
 
 /* ======================= switches ======================= */
@@ -1115,13 +1158,15 @@ function drawDes(){const cv=$("desCanvas");if(!cv)return;const{ctx,w,h}=setupCan
 document.querySelectorAll("#mapSeg button").forEach(b=>b.onclick=()=>{mapMode=b.dataset.v;document.querySelectorAll("#mapSeg button").forEach(x=>x.classList.toggle("on",x===b));drawDes()});
 function renderDesTable(){if(!$("desTable"))return;const src=DS==="custom"?DES:(CMP&&CMP[DS])||{},rows=METHODS.filter(m=>!m.only||m.only.includes(DS)),base=src.base;
   $("desResH").textContent=T("des_res",{ds:T("ds_"+DS+"_short")});
-  const done=rows.filter(m=>isFinite(src[m.id])).sort((a,b)=>src[b.id]-src[a.id]),pend=rows.filter(m=>!isFinite(src[m.id]));
-  const bestFree=done.find(m=>!m.sup&&m.id!=="base");
   let h=(desStale&&!$("autoRun").checked)?`<tr><td colspan="3" class="hint" style="color:var(--warn)">${T("des_unclassified")}</td></tr>`:"";
   h+=`<tr><th>${T("cmp_m")}</th><th>${T("des_th_f")}</th><th>${T("des_th_l")}</th></tr>`;
-  done.forEach(m=>{const f=src[m.id],d=isFinite(base)?f-base:NaN,hl=bestFree&&m.id===bestFree.id,cur=m.id===state.m;
-    h+=`<tr data-m="${m.id}" class="${cur?"cur":""}" style="cursor:pointer${hl?";color:var(--good);font-weight:650":""}"><td>${cur?"▸ ":""}${mname(m)} ${m.sup?`<span class="tag sup">${T("tag_labels")}</span>`:""}</td><td>${f3(f)}</td><td style="color:${d>.01?"var(--good)":"var(--muted)"}">${m.id==="base"?"":(d>=0?"+":"")+num(d,3)}</td></tr>`});
-  pend.forEach(m=>h+=`<tr data-m="${m.id}" class="${m.id===state.m?"cur":""}" style="cursor:pointer"><td>${mname(m)}</td><td style="color:var(--faint)">…</td><td></td></tr>`);
+  for(const cs of ["unsup","sup"]){const rs=rows.filter(m=>caseOf(m)===cs);
+    const done=rs.filter(m=>isFinite(src[m.id])).sort((a,b)=>src[b.id]-src[a.id]),pend=rs.filter(m=>!isFinite(src[m.id]));
+    const best=cs==="unsup"?done.find(m=>m.id!=="base"):null;
+    h+=`<tr class="case"><td colspan="3">${T("case_"+cs)}</td></tr>`;
+    done.forEach(m=>{const f=src[m.id],d=isFinite(base)?f-base:NaN,hl=best&&m.id===best.id,cur=m.id===state.m;
+      h+=`<tr data-m="${m.id}" title="${T("ms_"+m.id)}" class="${cur?"cur":""}" style="cursor:pointer${hl?";color:var(--good);font-weight:650":""}"><td>${cur?"▸ ":""}${mname(m)}</td><td>${f3(f)}</td><td style="color:${d>.01?"var(--good)":"var(--muted)"}">${m.id==="base"?"":(d>=0?"+":"")+num(d,3)}</td></tr>`});
+    pend.forEach(m=>h+=`<tr data-m="${m.id}" title="${T("ms_"+m.id)}" class="${m.id===state.m?"cur":""}" style="cursor:pointer"><td>${mname(m)}</td><td style="color:var(--faint)">…</td><td></td></tr>`)}
   const tb=$("desTable");tb.innerHTML=h;tb.querySelectorAll("tr[data-m]").forEach(tr=>tr.onclick=()=>selectInLab(tr.dataset.m))}
 function selectInLab(mid){state.m=mid;const m=METHODS.find(x=>x.id===mid);if(m.type==="score")state.frac=PR;renderMethods();renderControls();update();location.hash="#lab"}
 function openCustom(){if(DS!=="custom")switchDataset("custom",true);location.hash="#lab"}
