@@ -117,6 +117,11 @@ svg .ax{stroke:var(--border)}
 .files .card p{font-size:13.5px;color:var(--muted)}
 .issue{font-size:13px;margin-top:8px;color:var(--warn)}
 ol.take{padding-left:20px;max-width:78ch} ol.take li{margin:8px 0}
+.dsCard{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:24px;border:1.5px solid var(--accent)}
+.dsCard .k{font-size:12.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.dsCard b{font-size:17px}
+.dsCard .n{font-size:13px;color:var(--muted);margin-top:2px;max-width:60ch}
+.seg.big button{padding:9px 14px;font-size:14px}
 footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px solid var(--border)}
 </style>
 </head>
@@ -132,19 +137,23 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
   <a class="l" href="#repo">Repo</a>
   <a class="l" href="#takeaways">Takeaways</a>
   <span class="sp"></span>
-  <div class="seg dsSeg"><button data-ds="orig" class="on">Original</button><button data-ds="dist">Distinct</button></div>
+  <div class="seg dsSeg"><button data-ds="orig">Original</button><button data-ds="dist">Distinct</button></div>
   <button class="themebtn" id="themeBtn">Theme</button>
 </div></nav>
 
 <header class="hero wrap">
   <div class="eyebrow">ML-overlay-problem · case study</div>
   <h1>Separating red from green when they live in the same place</h1>
-  <p class="lede">1,672 points, two colours, one plane. Fifteen-plus clustering methods were tried in this repo and most landed on almost exactly the same F1 score. This page explains why, shows that a one-line score with no labels (how far a point is from its neighbours) beats them all, and lets you run every idea live on the real dataset. A second dataset (switch it at the top right) keeps the same footprint but draws red from a Gaussian and green from a uniform distribution, which shows what changes when the classes really are different.</p>
+  <p class="lede">1,672 points, two colours, one plane. Fifteen-plus clustering methods were tried in this repo and most landed on almost exactly the same F1 score. This page explains why, shows that a one-line score with no labels (how far a point is from its neighbours) beats them all, and lets you run every idea live on the real dataset. A second dataset (switch it below or at the top right) keeps the same footprint but draws red from a Gaussian and green from a uniform distribution, which shows what changes when the classes really are different.</p>
+  <div class="card dsCard">
+    <div><div class="k">You are viewing</div><b id="dsHero"></b><div class="n" id="dsHeroNote"></div></div>
+    <div class="seg dsSeg big"><button data-ds="orig">Original overlay</button><button data-ds="dist">Distinct: Gaussian red / uniform green</button></div>
+  </div>
 </header>
 
 <section id="problem"><div class="wrap">
   <h2>The problem</h2>
-  <p class="sub"><b id="dsName"></b><br>Each row of <code id="dsFile">df_red_green_overlay.csv</code> is an (X, Y) coordinate with a colour. The task is to recover the colour without using it. That's hard because, viewed as whole populations, the two colours have the same shape.</p>
+  <p class="sub"><b id="dsName"></b><br>Each row of <code id="dsFile">df_red_green_overlay.csv</code> is an (X, Y) coordinate with a colour. The task is to recover the colour without using it. <span id="probWhy"></span></p>
   <div class="grid g4">
     <div class="card tile"><div class="k">Points</div><div class="v" id="tN">–</div><div class="n">2 features: X, Y</div></div>
     <div class="card tile"><div class="k">Red (minority)</div><div class="v" id="tR" style="color:var(--red)">–</div><div class="n" id="tRp"></div></div>
@@ -271,8 +280,8 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
 </div></section>
 
 <section id="results"><div class="wrap">
-  <h2>What the notebook reported <span style="font-weight:400;color:var(--muted);font-size:16px">(original dataset)</span></h2>
-  <p class="sub">F1 scores copied from the saved outputs of <code>case_study-unsupervised-overlay-problem.ipynb</code>. The dashed line is the all-red baseline (0.239). Methods tagged "uses labels" saw the colours during fitting or tuning, so they are not truly unsupervised.</p>
+  <h2>What the notebook reported <span style="font-weight:400;color:var(--muted);font-size:16px" id="resDs"></span></h2>
+  <p class="sub"><span id="resSrc"></span> The dashed line is the all-red baseline (<span id="resBase"></span>). Methods tagged "uses labels" saw the colours during fitting or tuning, so they are not truly unsupervised.</p>
   <div class="card">
     <div class="toolbar"><div class="seg" id="resSeg"><button data-v="score" class="on">Sort by F1</button><button data-v="nb">Notebook order</button></div>
       <div class="legend" style="margin:0"><span><i style="background:var(--base)"></i>label-free</span><span><i style="background:var(--accent)"></i>label-free, beats baseline</span><span><i style="background:var(--good)"></i>new on this page</span><span><i style="background:var(--warn)"></i>uses labels</span></div></div>
@@ -346,7 +355,8 @@ function buildDataset(key){const D=DATASETS[key];if(D.N)return D;
   return D}
 function useDataset(key){const D=buildDataset(key);DS=key;
   ({N,RX,RY,Y,EX,EY,NR,PR,BASE,mx,my,sx,sy,ZX,ZY,xmin,xmax,ymin,ymax,exmin,exmax,eymin,eymax,NI,ND,AREA}=D)}
-useDataset("orig");
+const INIT_DS=(()=>{try{const q=new URLSearchParams(location.search).get("data");if(q==="orig"||q==="dist")return q}catch(e){}return"dist"})();
+useDataset(INIT_DS);
 
 /* ---------- seeded RNG ---------- */
 function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -577,6 +587,7 @@ document.querySelectorAll("#spaceSeg button").forEach(b=>b.onclick=()=>{setSpace
 
 /* ---------- problem section ---------- */
 function problem(){const D=DATASETS[DS];document.getElementById("dsName").textContent=D.name;document.getElementById("dsFile").textContent=D.file;
+  document.getElementById("probWhy").textContent=DS==="orig"?"That's hard because, viewed as whole populations, the two colours have the same shape.":"Here the colours have different shapes (a concentrated Gaussian vs. a flat background), so density-aware methods can separate them, though the overlap still caps F1 at about 0.75.";
   document.getElementById("statNote").innerHTML=DS==="orig"?"The means differ by about 1–7% of a standard deviation, and the spreads are almost identical. Any method that models each class as one global blob (K-Means, GMM, Fuzzy C-Means, spectral cuts) has nothing to grab onto."
    :"The means still nearly coincide, because red sits at the centre, so a centroid method like K-Means still sees nothing. But red's spread is about 5× smaller than green's. The classes differ in <b>shape</b> (concentrated vs. flat), not in location, and that is what a density or Gaussian + uniform model can use.";
   document.getElementById("tN").textContent=N.toLocaleString();document.getElementById("tR").textContent=NR;document.getElementById("tG").textContent=(N-NR).toLocaleString();document.getElementById("tRp").textContent=pct(PR)+" of points";document.getElementById("tGn").textContent=`imbalance ≈ ${((N-NR)/NR).toFixed(1)} : 1`;
@@ -624,7 +635,15 @@ const median=a=>{const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length
 document.getElementById("kSig").oninput=signal;
 
 /* ---------- notebook results ---------- */
-const NB=[
+const NB_DIST=[
+ ["DBSCAN",.7787,0,"eps / min_samples picked by F1 against labels"],["Agglomerative",.2935,0],["Fuzzy C-Means",.3299,0],["t-SNE + DBSCAN",.2351,0,"= all-red: the notebook's eps grid misses the red cluster"],
+ ["Spectral (kNN affinity)",.3011,0],["ICA + DBSCAN",.2351,0,"= all-red"],["ICA + Agglomerative",.2918,0],["ICA + GMM",.4075,0],["ICA + Spectral",.2672,0],["ICA + K-Means",.2666,0],
+ ["KDE density ratio",.4247,1,"fits a KDE per colour"],["Hyperbolic graph (Poincaré)",.3363,0],["Hyperbolic GCN (t-SNE edges)",.2714,0,"trains now; seeded"],
+ ["Logistic regression (balanced)",.2349,1,"supervised, test split: a linear boundary can't enclose a blob"],["Random forest (balanced)",.8000,1,"supervised, test split"],["Gradient boosting",.7714,1,"supervised, test split"],["SVM RBF, tuned threshold",.8205,1,"supervised, test split; CV 0.734"],
+ ["One-Class SVM",.2652,1,"trained on green only"],["LNND (k=10)",.2347,0,"normalising by neighbours' density cancels the bump"],["OCSVM + LNND combined",.2500,1],
+ ["k-NN density, k=10 (this page)",.7310,0,"no labels, flag top 13.3%"],["Gaussian + uniform EM (this page)",.7490,0,"no labels"]
+];
+const NB_ORIG=[
  ["DBSCAN",.2391,0,"= all-red: everything became noise"],["Agglomerative",.2220,0],["Fuzzy C-Means",.2183,0],["t-SNE + DBSCAN",.2391,0,"= all-red"],
  ["Spectral (kNN affinity)",.2166,0],["ICA + DBSCAN",.2391,0,"= all-red"],["ICA + Agglomerative",.2216,0],["ICA + GMM",.2490,0],["ICA + Spectral",.2159,0],["ICA + K-Means",.2515,0],
  ["KDE density ratio",.2391,1,"fits KDE per colour; = all-red"],["Hyperbolic graph (Poincaré)",.2187,0],["Hyperbolic GCN (t-SNE edges)",.2600,0,"gradient errors: untrained; re-run gave 0.239"],
@@ -632,8 +651,13 @@ const NB=[
  ["One-Class SVM",.2373,1,"trained on green only"],["LNND (k=10)",.2952,0,"k chosen by F1 against labels"],["OCSVM + LNND combined",.2261,1],
  ["k-NN distance, k=10 (this page)",.3877,0,"no labels, flag top 13.6%; k=5 gives 0.458"]
 ];
-function results(mode){const el=document.getElementById("bars"),rows=NB.map((r,i)=>({n:r[0],f:r[1],sup:r[2],note:r[3],i}));if(mode==="score")rows.sort((a,b)=>b.f-a.f);
-  const xm=.5;el.innerHTML="";rows.forEach(r=>{const col=r.n.includes("this page")?"var(--good)":r.sup?"var(--warn)":(r.f>BASE+.005?"var(--accent)":"var(--base)");
+let resMode="score";
+function results(mode){resMode=mode=mode||resMode;const NB=DS==="dist"?NB_DIST:NB_ORIG;
+  document.getElementById("resDs").textContent=DS==="dist"?"(distinct dataset, rerun)":"(original dataset)";
+  document.getElementById("resSrc").innerHTML=DS==="dist"?"F1 scores from the notebook rerun on <code>df_red_green_distinct.csv</code>; these outputs are saved in the notebook.":"F1 scores copied from the original saved outputs of <code>case_study-unsupervised-overlay-problem.ipynb</code>.";
+  document.getElementById("resBase").textContent=BASE.toFixed(3);
+  const el=document.getElementById("bars"),rows=NB.map((r,i)=>({n:r[0],f:r[1],sup:r[2],note:r[3],i}));if(mode==="score")rows.sort((a,b)=>b.f-a.f);
+  const xm=Math.max(.5,Math.ceil(Math.max(...rows.map(r=>r.f))*10)/10);el.innerHTML="";rows.forEach(r=>{const col=r.n.includes("this page")?"var(--good)":r.sup?"var(--warn)":(r.f>BASE+.005?"var(--accent)":"var(--base)");
     const d=document.createElement("div");d.className="row";d.title=r.note||"";
     d.innerHTML=`<div>${r.n}${r.note?`<div style="font-size:11.5px;color:var(--faint);line-height:1.3">${r.note}</div>`:""}</div><div class="track"><div class="fill" style="width:${r.f/xm*100}%;background:${col}"></div><div class="bl" style="left:${BASE/xm*100}%"></div></div><div class="num">${r.f.toFixed(3)}</div>`;el.appendChild(d)})}
 document.querySelectorAll("#resSeg button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#resSeg button").forEach(x=>x.classList.toggle("on",x===b));results(b.dataset.v)});
@@ -644,7 +668,11 @@ try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>redraw());
 
 function redraw(){drawMini();trap();signal();update()}
-function switchDataset(key){if(key===DS)return;useDataset(key);document.querySelectorAll(".dsSeg button").forEach(b=>b.classList.toggle("on",b.dataset.ds===key));
+function syncDs(){document.querySelectorAll(".dsSeg button").forEach(b=>b.classList.toggle("on",b.dataset.ds===DS));
+  document.getElementById("dsHero").textContent=DS==="dist"?"Distinct dataset: Gaussian red, uniform green":"Original overlay dataset";
+  document.getElementById("dsHeroNote").innerHTML=DS==="dist"?"<code>df_red_green_distinct.csv</code>: same footprint, but the classes really differ. Density methods now work. Every section below follows this switch.":"<code>df_red_green_overlay.csv</code>: both colours share one distribution, so most methods score at the 0.239 baseline. Every section below follows this switch.";
+  try{const u=new URL(location.href);u.searchParams.set("data",DS);history.replaceState(null,"",u)}catch(e){}}
+function switchDataset(key){if(key===DS)return;useDataset(key);syncDs();results();
   const m=METHODS.find(x=>x.id===state.m);if(m.only&&m.only!==key)state.m=key==="dist"?"kdd":"kd";
   if(state.m==="kd"&&key==="dist")state.m="kdd";else if(state.m==="kdd"&&key==="orig")state.m="kd";
   state.frac=PR;problem();renderMethods();renderControls();redraw();setTimeout(()=>{METHODS.forEach(m=>{if(!m.only||m.only===DS)runMethod(m.id)});renderMethods()},30)}
@@ -660,7 +688,8 @@ document.getElementById("goTsne").onclick=()=>{switchDataset("dist");state.m="ts
 let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{drawMini();drawScatter()},120)});
 
 /* ---------- init ---------- */
-problem();results("score");renderMethods();renderControls();redraw();
+if(DS==="dist")state.m="kdd";
+syncDs();problem();results("score");renderMethods();renderControls();redraw();
 // warm cache for list badges
 setTimeout(()=>{METHODS.forEach(m=>{if(!m.only||m.only===DS)runMethod(m.id)});renderMethods();setTimeout(compareTable,30)},50);
 </script>
