@@ -339,13 +339,83 @@ print("\n✓ Saved: tsne_classification.png")
 plt.show()
 
 # ============================================================================
+# METHOD 9: GRAPH METHODS ON A k-NN GRAPH
+# ============================================================================
+# Adapted from https://github.com/D2718281828nis/ML-MachineLearning-Graphs:
+#   * graph construction as in "Graph from DataFrame": every point is a node, linked to its
+#     k nearest neighbours. NOTE: that notebook also adds "type-based edges" between points
+#     of the same Type -- Type IS the colour, so those edges leak the answer. Not used here.
+#   * the GCN message-passing operator from graph_learning_basics:
+#         S = D~^(-1/2) (A + I) D~^(-1/2),   H' = S H
+# Unsupervised: 9a graph-smoothed k-NN density, 9b spectral cut (Fiedler vector).
+# Supervised (5-fold CV, colours of scored nodes hidden): 9c label spreading, 9d SGC
+# (simplified GCN = logistic regression on S^K-propagated node features).
+print("\n" + "="*70)
+print("METHOD 9: GRAPH METHODS (k-NN graph, GCN propagation)")
+print("="*70)
+
+from scipy import sparse
+from sklearn.neighbors import kneighbors_graph
+from sklearn.cluster import SpectralClustering
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import PolynomialFeatures
+
+GRAPH_K = 10
+A_knn = kneighbors_graph(X_std, GRAPH_K, mode='connectivity', include_self=False)
+A_knn = ((A_knn + A_knn.T) > 0).astype(float)                  # symmetric, distance-based edges only
+A_tilde = A_knn + sparse.eye(len(X))
+d_inv_sqrt = sparse.diags(np.asarray(A_tilde.sum(1)).ravel() ** -0.5)
+S_gcn = d_inv_sqrt @ A_tilde @ d_inv_sqrt                       # GCN operator
+print(f"k-NN graph: {len(X)} nodes, {int(A_knn.nnz / 2)} edges (k={GRAPH_K})")
+
+
+def report(name, labels):
+    f1 = f1_score(true_labels, labels)
+    print(f"\n{name}\nF1 Score: {f1:.4f}   Precision: {precision_score(true_labels, labels, zero_division=0):.4f}   "
+          f"Recall: {recall_score(true_labels, labels):.4f}")
+    return f1
+
+
+# 9a. unsupervised: k-NN density averaged over graph neighbours (one GCN step)
+graph_density = S_gcn @ knn_density(X_std, GRAPH_K)
+gdens_labels = flag_top(graph_density, n_flag)
+gdens_f1 = report("9a. Graph-smoothed k-NN density (no labels, 1 propagation step)", gdens_labels)
+
+# 9b. unsupervised: spectral cut of the graph, smaller part = red
+spec = SpectralClustering(2, affinity='precomputed', random_state=0).fit_predict(A_knn.toarray())
+gspec_labels = spec if spec.mean() < 0.5 else 1 - spec
+gspec_f1 = report("9b. Graph spectral cut (no labels, smaller part = red)", gspec_labels)
+
+# 9c/9d. supervised, 5-fold CV
+cv = StratifiedKFold(5, shuffle=True, random_state=0)
+glp_score, sgc_score = np.zeros(len(X)), np.zeros(len(X))
+node_feats = np.c_[PolynomialFeatures(4, include_bias=False).fit_transform(X_std), knn_density(X_std, GRAPH_K)]
+node_feats = StandardScaler().fit_transform(node_feats)
+sgc_feats = S_gcn @ (S_gcn @ node_feats)                       # K = 2 propagation steps
+for tr, te in cv.split(X_std, true_labels):
+    y_tr = true_labels.values[tr] if hasattr(true_labels, 'values') else true_labels[tr]
+    Y0 = np.zeros((len(X), 2))
+    Y0[tr, y_tr] = 1
+    Y0[tr] /= np.array([[(y_tr == 0).sum(), (y_tr == 1).sum()]])  # class-balanced seeds
+    F = Y0.copy()
+    for _ in range(50):                                          # label spreading, alpha = 0.9
+        F = 0.9 * (S_gcn @ F) + 0.1 * Y0
+    glp_score[te] = (F[:, 1] / (F.sum(1) + 1e-12))[te]
+    sgc = LogisticRegression(C=1e4, class_weight='balanced', max_iter=20000).fit(sgc_feats[tr], y_tr)
+    sgc_score[te] = sgc.predict_proba(sgc_feats[te])[:, 1]
+glp_labels, sgc_labels = flag_top(glp_score, n_flag), flag_top(sgc_score, n_flag)
+glp_f1 = report("9c. Graph label spreading (USES LABELS, 5-fold CV)", glp_labels)
+sgc_f1 = report("9d. SGC, simplified GCN (USES LABELS, 5-fold CV)", sgc_labels)
+
+# ============================================================================
 # VISUALIZATION
 # ============================================================================
 print("\n" + "="*70)
 print("GENERATING VISUALIZATIONS")
 print("="*70)
 
-fig, axes = plt.subplots(3, 4, figsize=(18, 14))
+fig, axes = plt.subplots(4, 4, figsize=(18, 18))
 fig.suptitle('Overlay Clustering: Different Methods Comparison', fontsize=16, fontweight='bold')
 
 methods = [
@@ -358,6 +428,10 @@ methods = [
     (ensemble_labels, "Ensemble Vote", "F1: {:.4f}".format(ensemble_f1)),
     (tsne_density_labels, "t-SNE + k-NN density", "F1: {:.4f}".format(tsne_density_f1)),
     (tsne_dbscan_labels, "t-SNE + DBSCAN (labels)", "F1: {:.4f}".format(tsne_dbscan_f1)),
+    (gdens_labels, "Graph: smoothed density", "F1: {:.4f}".format(gdens_f1)),
+    (gspec_labels, "Graph: spectral cut", "F1: {:.4f}".format(gspec_f1)),
+    (glp_labels, "Graph: label spreading (labels)", "F1: {:.4f}".format(glp_f1)),
+    (sgc_labels, "Graph: SGC (labels)", "F1: {:.4f}".format(sgc_f1)),
     (true_labels, "Ground Truth", "Reference")
 ]
 
@@ -430,9 +504,10 @@ print("="*70)
 results_data = {
     'Method': ['GMM (Full)', 'Spectral Clustering', 'Kernel K-Means', 
                'Isolation Forest', f'GMM ({best_cov})', 'Soft GMM + Threshold', 'Ensemble',
-               't-SNE + k-NN density', 't-SNE + DBSCAN (uses labels)'],
+               't-SNE + k-NN density', 't-SNE + DBSCAN (uses labels)',
+               'Graph: smoothed density', 'Graph: spectral cut', 'Graph: label spreading (uses labels)', 'Graph: SGC (uses labels)'],
     'F1 Score': [gmm_f1, spectral_f1, kernel_f1, iso_f1, best_f1, density_f1_opt, ensemble_f1,
-                 tsne_density_f1, tsne_dbscan_f1],
+                 tsne_density_f1, tsne_dbscan_f1, gdens_f1, gspec_f1, glp_f1, sgc_f1],
     'Precision': [
         precision_score(true_labels, gmm_labels),
         precision_score(true_labels, spectral_labels),
@@ -442,7 +517,8 @@ results_data = {
         precision_score(true_labels, density_labels_opt),
         precision_score(true_labels, ensemble_labels),
         precision_score(true_labels, tsne_density_labels),
-        precision_score(true_labels, tsne_dbscan_labels, zero_division=0)
+        precision_score(true_labels, tsne_dbscan_labels, zero_division=0),
+        *[precision_score(true_labels, l, zero_division=0) for l in (gdens_labels, gspec_labels, glp_labels, sgc_labels)]
     ],
     'Recall': [
         recall_score(true_labels, gmm_labels),
@@ -453,7 +529,8 @@ results_data = {
         recall_score(true_labels, density_labels_opt),
         recall_score(true_labels, ensemble_labels),
         recall_score(true_labels, tsne_density_labels),
-        recall_score(true_labels, tsne_dbscan_labels)
+        recall_score(true_labels, tsne_dbscan_labels),
+        *[recall_score(true_labels, l) for l in (gdens_labels, gspec_labels, glp_labels, sgc_labels)]
     ]
 }
 
