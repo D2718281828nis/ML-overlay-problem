@@ -3,84 +3,585 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Overlay Clustering — Interactive Demo</title>
+<title>Overlay Clustering Lab</title>
+<meta name="description" content="Interactive analysis of the ML-overlay-problem repo: why unsupervised methods struggle to separate overlapping red and green points, with every method running live in the browser on the real dataset.">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Segoe UI",system-ui,sans-serif;background:#0a0e17;color:#e0e6f0;min-height:100vh}
-header{background:linear-gradient(135deg,#0f172a,#1e293b);padding:24px 32px;border-bottom:1px solid #334155}
-header h1{font-size:28px;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-header p{color:#94a3b8;margin-top:4px;font-size:14px}
-.main{display:flex;gap:20px;padding:20px;max-width:1440px;margin:0 auto}
-.sidebar{width:340px;flex-shrink:0;display:flex;flex-direction:column;gap:16px}
-.canvas-wrap{flex:1;background:#0f172a;border-radius:12px;border:1px solid #1e293b;padding:16px;display:flex;flex-direction:column;align-items:center}
-canvas{border-radius:8px;cursor:crosshair;max-width:100%}
-.card{background:#1e293b;border-radius:12px;padding:16px;border:1px solid #334155}
-.card h3{font-size:15px;margin-bottom:12px;color:#60a5fa}
-.method-btn{width:100%;padding:10px 14px;margin-bottom:6px;border:2px solid #334155;border-radius:8px;background:#0f172a;color:#cbd5e1;font-size:13px;cursor:pointer;text-align:left;transition:all .2s}
-.method-btn:hover{border-color:#60a5fa;background:#1a2540}
-.method-btn.active{border-color:#60a5fa;background:#1e3a5f;color:#fff;box-shadow:0 0 12px #3b82f633}
-.method-btn .f1-badge{float:right;background:#22c55e;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.stat{background:#0f172a;border-radius:8px;padding:10px;text-align:center}
-.stat .val{font-size:22px;font-weight:700;color:#60a5fa}
-.stat .lbl{font-size:11px;color:#64748b;margin-top:2px}
-.legend{display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:13px}
-.legend span{display:flex;align-items:center;gap:6px}
-.legend .dot{width:12px;height:12px;border-radius:50%;display:inline-block}
-.threshold-wrap{margin-top:12px}
-.threshold-wrap label{font-size:13px;color:#94a3b8;display:flex;justify-content:space-between;margin-bottom:6px}
-.threshold-wrap input[type=range]{width:100%;accent-color:#60a5fa}
-.info-box{background:#0f172a;border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:12px;font-size:12px;color:#94a3b8;line-height:1.6;margin-top:12px}
-.info-box strong{color:#e2e8f0}
-.comparison{margin-top:16px}
-.comparison table{width:100%;border-collapse:collapse;font-size:12px}
-.comparison th,.comparison td{padding:6px 8px;text-align:center;border-bottom:1px solid #1e293b}
-.comparison th{color:#60a5fa;font-weight:600}
-.comparison td{color:#cbd5e1}
-.comparison tr.best{background:#22c55e18}
-.comparison tr.best td{color:#4ade80;font-weight:700}
-footer{text-align:center;padding:20px;color:#475569;font-size:12px}
-footer a{color:#60a5fa;text-decoration:none}
-@media(max-width:900px){.main{flex-direction:column}.sidebar{width:100%}}
+:root{
+  --bg:#f7f8fa; --surface:#ffffff; --surface-2:#f0f2f5; --border:#dde1e7;
+  --text:#14181f; --muted:#5b6472; --faint:#8a93a1;
+  --accent:#2f6fdf; --accent-soft:#2f6fdf1a;
+  --red:#d6363c; --green:#2f9a5c; --tp:#d6363c; --fn:#2f6fdf; --fp:#e59400; --tn:#b9c1cc;
+  --base:#7a8494; --good:#1f8a52; --warn:#b26a00;
+  --shadow:0 1px 2px #0000000d,0 4px 16px #0000000a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c0f14; --surface:#141922; --surface-2:#1b212c; --border:#2a3240;
+    --text:#e6eaf0; --muted:#9aa4b2; --faint:#6b7585;
+    --accent:#6ea2ff; --accent-soft:#6ea2ff1f;
+    --red:#ff5a5f; --green:#46c27e; --tp:#ff5a5f; --fn:#6ea2ff; --fp:#ffb020; --tn:#3a4352;
+    --base:#8a94a4; --good:#4fd18b; --warn:#ffb020;
+    --shadow:0 1px 2px #0006,0 4px 20px #0004;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c0f14; --surface:#141922; --surface-2:#1b212c; --border:#2a3240;
+  --text:#e6eaf0; --muted:#9aa4b2; --faint:#6b7585;
+  --accent:#6ea2ff; --accent-soft:#6ea2ff1f;
+  --red:#ff5a5f; --green:#46c27e; --tp:#ff5a5f; --fn:#6ea2ff; --fp:#ffb020; --tn:#3a4352;
+  --base:#8a94a4; --good:#4fd18b; --warn:#ffb020;
+  --shadow:0 1px 2px #0006,0 4px 20px #0004;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+nav.top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+nav.top .wrap{display:flex;align-items:center;gap:20px;height:52px;overflow-x:auto;white-space:nowrap}
+nav.top .brand{font-weight:650;letter-spacing:-.01em}
+nav.top a.l{color:var(--muted);text-decoration:none;font-size:13.5px}
+nav.top a.l:hover{color:var(--text)}
+nav.top .sp{flex:1}
+.themebtn{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:8px;padding:4px 10px;font-size:12.5px;cursor:pointer}
+header.hero{padding:56px 0 28px}
+.eyebrow{font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(28px,4.4vw,44px);line-height:1.12;letter-spacing:-.025em;margin:10px 0 14px;max-width:20ch}
+.lede{font-size:17px;color:var(--muted);max-width:68ch}
+section{padding:40px 0;border-top:1px solid var(--border)}
+h2{font-size:24px;letter-spacing:-.015em;margin-bottom:6px}
+h3{font-size:15px;margin-bottom:8px}
+.sub{color:var(--muted);max-width:72ch;margin-bottom:22px}
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.g4{grid-template-columns:1fr 1fr}.g3,.g2{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow)}
+.tile .v{font-size:30px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.tile .k{font-size:13px;color:var(--muted)}
+.tile .n{font-size:12.5px;color:var(--faint);margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12.5px;color:var(--muted);font-weight:600}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:14px 16px;border-radius:0 10px 10px 0;margin:18px 0}
+.callout.warn{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent)}
+.formula{font-family:ui-serif,Georgia,serif;font-size:19px;padding:6px 0}
+/* lab */
+.lab{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.lab{grid-template-columns:1fr}}
+.methods{display:flex;flex-direction:column;gap:6px}
+.mbtn{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:9px;padding:9px 11px;font-size:13.5px;cursor:pointer}
+.mbtn:hover{border-color:var(--accent)}
+.mbtn.on{border-color:var(--accent);background:var(--accent-soft)}
+.mbtn .f{font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--muted)}
+.tag{font-size:10.5px;font-weight:600;letter-spacing:.03em;padding:1px 6px;border-radius:5px;border:1px solid var(--border);color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.tag.sup{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent)}
+.grp{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);margin:10px 0 2px}
+.ctl{margin-top:12px}
+.ctl label{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px}
+.ctl label b{color:var(--text);font-variant-numeric:tabular-nums;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:9px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--muted);padding:6px 12px;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--accent-soft);color:var(--text);font-weight:600}
+.plot{position:relative}
+canvas{display:block;width:100%;border-radius:8px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:8px;padding:6px 9px;font-size:12px;display:none;white-space:nowrap;z-index:3}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+@media(max-width:600px){.metrics{grid-template-columns:1fr 1fr}}
+.metric{background:var(--surface-2);border-radius:9px;padding:10px 12px}
+.metric .v{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}
+.metric .k{font-size:12px;color:var(--muted)}
+.lift.up{color:var(--good)} .lift.dn{color:var(--muted)}
+.cm{display:grid;grid-template-columns:auto 1fr 1fr;gap:4px;font-size:12.5px;font-variant-numeric:tabular-nums;margin-top:6px}
+.cm div{padding:6px 8px;border-radius:6px;text-align:center;background:var(--surface-2)}
+.cm .h{background:transparent;color:var(--muted)}
+.desc{font-size:13.5px;color:var(--muted);margin-top:12px;line-height:1.55}
+.desc b{color:var(--text)}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.busy{font-size:12.5px;color:var(--faint)}
+svg text{fill:var(--muted);font-size:11px;font-family:inherit}
+svg .ax{stroke:var(--border)}
+.bars .row{display:grid;grid-template-columns:minmax(150px,230px) 1fr 56px;gap:10px;align-items:center;font-size:13px;padding:3px 0}
+@media(max-width:600px){.bars .row{grid-template-columns:120px 1fr 48px;font-size:12px}}
+.bars .track{position:relative;height:16px;background:var(--surface-2);border-radius:4px}
+.bars .fill{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.bars .bl{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--text);opacity:.55}
+.bars .num{text-align:right;font-variant-numeric:tabular-nums}
+.files .card h3{font-family:ui-monospace,Menlo,monospace;font-size:13.5px}
+.files .card p{font-size:13.5px;color:var(--muted)}
+.issue{font-size:13px;margin-top:8px;color:var(--warn)}
+ol.take{padding-left:20px;max-width:78ch} ol.take li{margin:8px 0}
+footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px solid var(--border)}
 </style>
 </head>
 <body>
-<header>
-<h1>Overlay Clustering Problem — Interactive Demo</h1>
-<p>How ML algorithms separate overlapping red and green point clouds. Select a method and watch the result in real time.</p>
+<nav class="top"><div class="wrap">
+  <span class="brand">Overlay Lab</span>
+  <a class="l" href="#problem">Problem</a>
+  <a class="l" href="#trap">The 0.239 trap</a>
+  <a class="l" href="#lab">Lab</a>
+  <a class="l" href="#signal">Where the signal is</a>
+  <a class="l" href="#results">Notebook results</a>
+  <a class="l" href="#repo">Repo</a>
+  <a class="l" href="#takeaways">Takeaways</a>
+  <span class="sp"></span>
+  <button class="themebtn" id="themeBtn">Theme</button>
+</div></nav>
+
+<header class="hero wrap">
+  <div class="eyebrow">ML-overlay-problem · case study</div>
+  <h1>Separating red from green when they live in the same place</h1>
+  <p class="lede">1,672 points, two colours, one plane. Fifteen-plus clustering methods were tried in this repo and most landed on almost exactly the same F1 score. This page explains why, shows that a one-line score with no labels (how far a point is from its neighbours) beats them all, and lets you run every idea live on the real dataset.</p>
 </header>
-<div class="main">
-<div class="sidebar">
-<div class="card">
-<h3>Clustering Methods</h3>
-<div id="methods"></div>
-</div>
-<div class="card">
-<h3>Metrics</h3>
-<div class="stats" id="stats"></div>
-</div>
-<div class="card" id="thresholdCard" style="display:none">
-<h3>Threshold Optimization</h3>
-<div class="threshold-wrap">
-<label><span>Threshold</span><span id="threshVal">0.50</span></label>
-<input type="range" id="threshold" min="0.1" max="0.9" step="0.01" value="0.5">
-</div>
-</div>
-<div class="card">
-<h3>All Methods Comparison</h3>
-<div class="comparison" id="comparison"></div>
-</div>
-<div class="info-box" id="infoBox">
-<strong>Problem:</strong> Red and green points spatially overlap. Traditional methods (K-Means, DBSCAN) cannot find the non-linear boundary.
-</div>
-</div>
-<div class="canvas-wrap">
-<canvas id="canvas" width="780" height="620"></canvas>
-<div class="legend">
-<span><span class="dot" style="background:#22c55e"></span> Green (true)</span>
-<span><span class="dot" style="background:#ef4444"></span> Red (true)</span>
-<span><span class="dot" style="background:#888"></span> Misclassified</span>
-</div>
-</div>
-</div>
-<footer>ML-overlay-problem &bull; GigaCode Demo &bull; <a href="https://github.com/D2718281828nis/ML-overlay-problem" target="_blank">GitHub Repo</a></footer>
+
+<section id="problem"><div class="wrap">
+  <h2>The problem</h2>
+  <p class="sub">Each row of <code>df_red_green_overlay.csv</code> is an (X, Y) coordinate with a colour. The task is to recover the colour without using it. That's hard because, viewed as whole populations, the two colours have the same shape.</p>
+  <div class="grid g4">
+    <div class="card tile"><div class="k">Points</div><div class="v" id="tN">–</div><div class="n">2 features: X, Y</div></div>
+    <div class="card tile"><div class="k">Red (minority)</div><div class="v" id="tR" style="color:var(--red)">–</div><div class="n" id="tRp"></div></div>
+    <div class="card tile"><div class="k">Green</div><div class="v" id="tG" style="color:var(--green)">–</div><div class="n">imbalance ≈ 6.4 : 1</div></div>
+    <div class="card tile"><div class="k">Mean distance between class centres</div><div class="v" id="tSep">–</div><div class="n">in standard deviations</div></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <h3>Global statistics per class</h3>
+      <table id="classStats"></table>
+      <p class="desc">The means differ by about 1–7% of a standard deviation. Any method that models each class as one global blob (K-Means, GMM, Fuzzy C-Means, spectral cuts) has nothing to grab onto.</p>
+    </div>
+    <div class="card">
+      <h3>What a method sees vs. the truth</h3>
+      <div class="plot"><canvas id="miniCanvas"></canvas></div>
+      <div style="margin-top:10px" class="seg" id="miniSeg">
+        <button data-v="blind" class="on">Unlabelled</button><button data-v="truth">Reveal colours</button>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="trap"><div class="wrap">
+  <h2>The 0.239 trap</h2>
+  <p class="sub">Label <em>every</em> point red. Precision becomes the red share <i>p</i> = 0.136 and recall becomes 1. The resulting F1 is the number that DBSCAN, t-SNE + DBSCAN, ICA + DBSCAN and the density-ratio method all reported in the notebook.</p>
+  <div class="grid g2">
+    <div class="card">
+      <div class="formula">F1<sub>all red</sub> = 2p / (1 + p) = <b id="bF1">0.2391</b></div>
+      <p class="desc">More generally, if a method flags a fraction <i>q</i> of points <b>at random</b>, precision stays at <i>p</i> and recall equals <i>q</i>, so F1 = 2pq / (p + q). Every random guesser sits on this curve. A method has to beat it at the same <i>q</i> before it can claim to have learned anything.</p>
+      <div class="ctl"><label>Flag at random: <b id="qLbl">100%</b></label><input type="range" id="qSl" min="1" max="100" value="100"></div>
+      <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+        <div class="metric"><div class="k">Precision</div><div class="v" id="qP">–</div></div>
+        <div class="metric"><div class="k">Recall</div><div class="v" id="qR">–</div></div>
+        <div class="metric"><div class="k">Expected F1</div><div class="v" id="qF">–</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Random-guess F1 by fraction flagged</h3>
+      <svg id="trapSvg" viewBox="0 0 460 250" width="100%"></svg>
+      <p class="desc">The curve is flat over a wide range, so many hyper-parameter settings that "flag most points" land close to 0.22–0.24. Those scores can look like a result, but they are noise around the baseline.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="lab"><div class="wrap">
+  <h2>Interactive lab</h2>
+  <p class="sub">Every method below is implemented in plain JavaScript and runs on all 1,672 points in your browser. Marker shape shows the truth, as in the CSV: <b>× = green (cross)</b>, <b>● = red (point)</b>. Colour shows the outcome. For score-based methods, drag on the F1 curve to choose how many points to flag.</p>
+  <div class="lab">
+    <div class="card">
+      <div class="methods" id="methods"></div>
+      <div id="controls"></div>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <div class="seg" id="viewSeg">
+          <button data-v="outcome" class="on">Outcome</button><button data-v="truth">Truth</button><button data-v="score">Score</button>
+        </div>
+        <span class="busy" id="busy"></span>
+      </div>
+      <div class="plot" id="plotWrap"><canvas id="canvas"></canvas><div class="tip" id="tip"></div></div>
+      <div class="legend" id="legend"></div>
+      <div class="metrics">
+        <div class="metric"><div class="k">F1 (red)</div><div class="v" id="mF1">–</div></div>
+        <div class="metric"><div class="k">Precision</div><div class="v" id="mP">–</div></div>
+        <div class="metric"><div class="k">Recall</div><div class="v" id="mR">–</div></div>
+        <div class="metric"><div class="k">vs. random at same q</div><div class="v lift" id="mLift">–</div></div>
+      </div>
+      <div class="grid g2" style="margin-top:14px;gap:14px">
+        <div>
+          <h3 style="font-size:13px;color:var(--muted)">Confusion matrix</h3>
+          <div class="cm" id="cm"></div>
+        </div>
+        <div id="curveBox">
+          <h3 style="font-size:13px;color:var(--muted)">F1 vs. fraction flagged <span style="font-weight:400">(drag to set)</span></h3>
+          <svg id="curveSvg" viewBox="0 0 360 170" width="100%" style="cursor:ew-resize;touch-action:none"></svg>
+        </div>
+      </div>
+      <div class="desc" id="mDesc"></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="signal"><div class="wrap">
+  <h2>Where the signal actually is</h2>
+  <p class="sub">Globally, the classes overlap completely. Locally, they don't. Red points tend to sit in slightly emptier spots, and they tend to sit next to other reds. LNND (the best label-free method in the notebook) and the supervised SVM both exploit this.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Distance to k-th nearest neighbour, by class</h3>
+      <div class="ctl" style="margin-top:0"><label>k <b id="kSigLbl">10</b></label><input type="range" id="kSig" min="1" max="40" value="10"></div>
+      <svg id="histSvg" viewBox="0 0 460 230" width="100%"></svg>
+      <div class="legend"><span><i style="background:var(--red)"></i>red</span><span><i style="background:var(--green)"></i>green</span><span id="histNote"></span></div>
+    </div>
+    <div class="card">
+      <h3>Share of red among the k nearest neighbours</h3>
+      <svg id="homSvg" viewBox="0 0 460 230" width="100%"></svg>
+      <p class="desc" id="homNote"></p>
+    </div>
+  </div>
+  <div class="callout"><b>The simplest score wins.</b> Rank points by the distance to their k-th nearest neighbour and flag the 227 sparsest. No labels are used, and F1 is <b>0.39 at k = 10</b> and <b>0.46 at k = 5</b>. That ties or beats the notebook's supervised RBF-SVM (test F1 0.41) and is far above LNND (0.295). Most red points are simply points in sparse spots. Try it in the lab under “k-NN distance”.</div>
+</div></section>
+
+<section id="results"><div class="wrap">
+  <h2>What the notebook reported</h2>
+  <p class="sub">F1 scores copied from the saved outputs of <code>case_study-unsupervised-overlay-problem.ipynb</code>. The dashed line is the all-red baseline (0.239). Methods tagged "uses labels" saw the colours during fitting or tuning, so they are not truly unsupervised.</p>
+  <div class="card">
+    <div class="toolbar"><div class="seg" id="resSeg"><button data-v="score" class="on">Sort by F1</button><button data-v="nb">Notebook order</button></div>
+      <div class="legend" style="margin:0"><span><i style="background:var(--base)"></i>label-free</span><span><i style="background:var(--accent)"></i>label-free, beats baseline</span><span><i style="background:var(--good)"></i>new on this page</span><span><i style="background:var(--warn)"></i>uses labels</span></div></div>
+    <div class="bars" id="bars"></div>
+  </div>
+</div></section>
+
+<section id="repo"><div class="wrap">
+  <h2>Repository map</h2>
+  <p class="sub">What each file contains, plus the issues found while reading it.</p>
+  <div class="grid g3 files">
+    <div class="card"><h3>case_study-unsupervised-overlay-problem.ipynb</h3><p>The main study, written to run in Colab. It covers DBSCAN, agglomerative clustering, NumPy Fuzzy C-Means, t-SNE, spectral clustering, ICA + polynomial features, KDE density ratio, a Poincaré-disk hyperbolic graph and GCN, supervised LogReg/RF/GB/SVM with threshold and cost tuning, OCSVM, and LNND.</p><p class="issue">The hyperbolic GCN cell logs “does not require grad” on every epoch, so the 0.26 F1 comes from an untrained model.</p></div>
+    <div class="card"><h3>README.md</h3><p>A guide to which methods to use for overlapping clusters: GMM, spectral with RBF, threshold tuning, LOF + GMM, multi-metric spectral, feature augmentation, and ensembles.</p><p class="issue">It promises F1 of 0.6–0.8+ and gains of 30–50% over K-Means. Nothing in the repo reaches those numbers on this dataset. It also calls <code>fit_predict_proba</code>, which isn't a scikit-learn method.</p></div>
+    <div class="card"><h3>overlay_clustering_advanced.py</h3><p>Seven methods in one script: GMM, spectral with RBF, kernel K-Means, two-stage Isolation Forest, EM with a spatial constraint, density-based soft assignment, and a voting ensemble. Each prints F1, precision, recall and a confusion matrix.</p></div>
+    <div class="card"><h3>overlay_advanced_tuning.py</h3><p>Tuning tools: BIC/AIC for GMM, a gamma search for spectral clustering, LOF weighting, multi-metric spectral, KDE mixtures, bootstrap consensus, and checks for correlation with the coordinates.</p><p class="issue">Line 115 calls <code>gmm.fit_predict_proba(X)</code>, which raises AttributeError.</p></div>
+    <div class="card"><h3>quickstart_colab.py</h3><p>A copy-paste Colab template: GMM (full covariance, n_init=30), a threshold search with <code>minimize_scalar</code>, comparison plots, and CSV export.</p><p class="issue">The threshold is tuned against <code>true_labels</code>. That is supervised selection, and the F1 it reports is optimistic.</p></div>
+    <div class="card"><h3>df_red_green_overlay.csv</h3><p>1,672 rows with columns <code>X, Y, Color, Type</code>. <code>Type</code> is redundant: cross means light_green and point means red. Coordinates are integers between about 37 and 1,940.</p></div>
+  </div>
+</div></section>
+
+<section id="takeaways"><div class="wrap">
+  <h2>Takeaways</h2>
+  <ol class="take">
+    <li><b>Always report the trivial baseline.</b> On this data, “everything is red” scores F1 = 0.239. About half of the notebook's results are within ±0.02 of it.</li>
+    <li><b>Global-blob methods can't work here.</b> The class means and covariances are nearly identical, so K-Means, GMM, FCM, spectral and agglomerative clustering split the plane geometrically, not by colour. Try GMM and FCM in the lab: they cut the cloud in half.</li>
+    <li><b>Frame it as local sparsity detection.</b> Red points sit in emptier spots. The raw k-NN distance (F1 0.39–0.46) beats LOF (0.32–0.33) and LNND (0.28–0.30). Those methods divide by the neighbours' density, and that normalisation removes the very signal that separates the classes.</li>
+    <li><b>Watch for label leakage.</b> Several “unsupervised” scores were chosen by maximising F1 against the true labels: the cluster-to-colour mapping, LNND's k, the GMM threshold in the quickstart, and OCSVM trained only on greens. Hold out labels for these choices, or pick them with an unsupervised criterion.</li>
+    <li><b>Know the ceiling.</b> Supervised models (SVM 0.41, leave-one-out k-NN up to about 0.47) barely beat the label-free k-NN distance. X and Y carry little more information than that. If you need more, add features (the source image? other attributes?) rather than a more exotic clustering algorithm.</li>
+    <li><b>Compare with the PR curve, not one F1.</b> For a rare class, average precision and F1 vs. fraction flagged (as in the lab) show whether a score really ranks reds above greens.</li>
+  </ol>
+</div></section>
+
+<footer><div class="wrap">
+  ML-overlay-problem · <a href="https://github.com/D2718281828nis/ML-overlay-problem">GitHub</a> ·
+  <a href="https://colab.research.google.com/github/D2718281828nis/ML-overlay-problem/blob/main/case_study-unsupervised-overlay-problem.ipynb">Open notebook in Colab</a> ·
+  All computations on this page run client-side on the embedded CSV.
+</div></footer>
+
+<script>
+const RAW="453,37,0 430,44,0 452,64,0 476,69,0 490,84,0 542,87,0 354,89,0 434,92,0 527,92,0 314,95,0 566,102,0 363,104,0 476,106,0 452,108,0 517,108,0 325,109,0 614,112,0 340,116,0 490,120,0 540,123,0 633,123,0 386,124,0 355,125,0 291,127,0 238,128,0 527,131,0 316,132,0 410,132,0 163,138,0 445,140,0 340,142,0 605,142,0 215,144,0 250,147,0 587,148,0 433,149,0 383,152,0 85,155,0 287,155,0 238,156,0 676,157,0 355,158,0 329,161,0 306,162,0 453,162,0 117,163,0 370,165,0 318,172,0 78,173,0 701,173,0 355,175,0 386,177,0 95,179,0 148,181,0 224,182,0 294,182,0 129,183,0 429,187,0 105,191,0 262,193,0 355,193,0 667,195,0 317,197,0 125,198,0 246,200,0 628,200,0 330,205,0 363,206,0 761,209,0 306,212,0 701,213,0 722,213,0 741,218,0 760,224,0 733,236,0 107,239,0 495,246,0 761,247,0 89,249,0 259,253,0 734,258,0 512,259,0 66,261,0 541,261,0 135,262,0 760,262,0 81,264,0 448,264,0 366,267,0 297,268,0 153,269,0 484,269,0 734,273,0 749,273,0 201,278,0 227,279,0 448,279,0 776,279,0 163,281,0 471,283,0 92,284,0 502,284,0 74,285,0 188,287,0 448,294,0 396,295,0 227,296,0 197,299,0 212,299,0 336,299,0 850,300,0 103,301,0 489,301,0 776,301,0 377,305,0 436,305,0 129,307,0 178,307,0 91,310,0 568,310,0 626,310,0 227,311,0 792,313,0 104,320,0 152,320,0 250,321,0 176,322,0 688,324,0 752,325,0 202,329,0 824,329,0 535,330,0 789,330,0 140,331,0 69,332,0 710,332,0 871,332,0 728,333,0 617,335,0 273,336,0 180,338,0 223,339,0 602,341,0 750,342,0 163,344,0 238,344,0 76,346,0 765,347,0 705,354,0 398,355,0 92,356,0 250,356,0 449,358,0 151,359,0 733,363,0 313,364,0 840,364,0 478,365,0 58,367,0 608,367,0 893,368,0 224,369,0 974,369,0 172,372,0 354,372,0 1068,372,0 92,375,0 437,375,0 587,375,0 799,375,0 77,376,0 960,378,0 908,379,0 122,380,0 923,380,0 838,381,0 812,383,0 163,384,0 234,384,0 863,384,0 295,385,0 615,385,0 1005,385,0 1033,386,0 783,387,0 383,389,0 401,389,0 974,392,0 1017,395,0 119,397,0 242,397,0 332,398,0 163,399,0 587,400,0 1107,400,0 606,401,0 92,402,0 648,402,0 922,402,0 1004,407,0 793,410,0 734,411,0 675,412,0 695,414,0 1136,414,0 268,416,0 812,418,0 405,420,0 650,422,0 948,424,0 760,426,0 1069,428,0 828,429,0 666,430,0 719,430,0 843,430,0 912,430,0 694,431,0 962,433,0 787,434,0 387,436,0 336,437,0 941,441,0 1094,442,0 738,444,0 832,444,0 272,448,0 663,448,0 923,448,0 1001,448,0 693,450,0 243,453,0 756,453,0 258,454,0 308,454,0 610,454,0 1107,455,0 940,456,0 288,457,0 892,457,0 877,459,0 1179,459,0 351,460,0 379,461,0 671,461,0 773,464,0 851,464,0 592,465,0 693,465,0 1193,465,0 393,467,0 832,467,0 336,469,0 610,469,0 1221,469,0 787,471,0 811,474,0 665,476,0 734,476,0 284,478,0 314,478,0 859,479,0 912,479,0 1253,480,0 621,481,0 1076,482,0 359,484,0 1016,484,0 722,485,0 798,485,0 890,487,0 1219,487,0 1234,487,0 298,488,0 640,489,0 1042,489,0 681,490,0 1193,490,0 846,492,0 313,493,0 204,494,0 748,498,0 941,498,0 667,499,0 694,499,0 709,500,0 824,500,0 649,501,0 862,502,0 1233,502,0 243,503,0 364,503,0 1163,504,0 729,505,0 288,507,0 610,507,0 265,508,0 1272,508,0 1064,510,0 768,512,0 336,513,0 810,513,0 1313,516,0 1204,517,0 873,518,0 943,518,0 1091,518,0 789,519,0 1253,519,0 719,521,0 1109,521,0 188,522,0 288,522,0 449,522,0 736,522,0 1351,523,0 1042,524,0 674,525,0 694,525,0 214,526,0 649,526,0 1218,526,0 768,527,0 536,528,0 599,530,0 626,530,0 888,532,0 1054,533,0 911,535,0 1250,536,0 183,538,0 614,539,0 861,539,0 1362,539,0 686,540,0 516,543,0 659,543,0 791,543,0 701,544,0 1067,545,0 727,546,0 407,547,0 536,547,0 599,549,0 638,549,0 1087,550,0 761,552,0 813,552,0 554,553,0 577,553,0 1001,553,0 444,555,0 858,555,0 418,558,0 743,559,0 704,563,0 565,564,0 1090,567,0 1114,568,0 472,570,0 658,571,0 790,571,0 725,573,0 888,573,0 1389,573,0 187,574,0 318,575,0 487,575,0 821,575,0 556,577,0 772,577,0 1035,577,0 601,578,0 1410,579,0 675,581,0 648,584,0 198,585,0 148,586,0 538,586,0 715,586,0 861,587,0 1008,587,0 566,589,0 1361,589,0 1394,589,0 397,590,0 1449,590,0 1563,591,0 926,592,0 1049,592,0 272,593,0 1610,594,0 580,595,0 761,595,0 839,596,0 809,598,0 884,598,0 667,600,0 1409,600,0 148,601,0 284,602,0 540,602,0 617,602,0 643,602,0 1257,602,0 326,603,0 715,603,0 1117,603,0 1467,604,0 1565,607,0 866,608,0 161,609,0 1536,609,0 1609,609,0 978,610,0 831,611,0 1089,611,0 177,612,0 1504,612,0 487,613,0 701,613,0 755,613,0 963,613,0 313,614,0 772,614,0 884,615,0 1048,615,0 539,619,0 715,619,0 1007,619,0 148,620,0 579,622,0 366,623,0 862,623,0 1022,623,0 186,624,0 253,624,0 681,624,0 664,625,0 1640,625,0 471,626,0 626,626,0 982,626,0 1448,627,0 781,628,0 160,629,0 205,629,0 1154,629,0 1517,629,0 592,630,0 701,630,0 903,630,0 1048,630,0 1564,630,0 1477,631,0 1534,631,0 1610,631,0 343,633,0 419,635,0 487,636,0 610,636,0 569,638,0 918,638,0 1028,638,0 1091,639,0 760,640,0 227,641,0 1621,642,0 709,643,0 264,646,0 806,646,0 1060,646,0 148,647,0 868,647,0 120,648,0 343,648,0 187,649,0 362,649,0 1508,649,0 1019,650,0 1636,652,0 419,653,0 1084,653,0 685,655,0 761,655,0 1651,655,0 328,656,0 1577,657,0 1608,658,0 242,659,0 131,660,0 1000,660,0 610,663,0 741,663,0 709,664,0 780,665,0 180,666,0 355,666,0 1103,666,0 1073,667,0 216,670,0 148,671,0 1659,671,0 231,672,0 681,673,0 797,673,0 1023,673,0 1621,673,0 371,674,0 859,677,0 167,678,0 201,679,0 265,679,0 723,679,0 1718,680,0 291,683,0 696,683,0 1595,685,0 828,686,0 983,686,0 1651,687,0 180,688,0 757,688,0 142,689,0 657,690,0 741,690,0 672,691,0 709,691,0 848,692,0 1031,692,0 1073,692,0 1001,693,0 332,694,0 888,694,0 303,697,0 1737,697,0 218,698,0 644,698,0 686,698,0 1118,698,0 1669,698,0 1061,702,0 1504,704,0 918,705,0 1535,705,0 857,706,0 1718,706,0 978,707,0 828,708,0 888,709,0 626,711,0 709,711,0 934,711,0 768,712,0 1315,713,0 1670,713,0 903,717,0 991,719,0 1690,719,0 919,720,0 1073,720,0 1738,720,0 829,723,0 646,724,0 889,724,0 698,726,0 933,726,0 1759,727,0 1013,728,0 764,729,0 659,732,0 864,732,0 1267,732,0 1308,732,0 674,733,0 1516,734,0 1605,734,0 729,735,0 918,735,0 979,737,0 697,741,0 1772,741,0 889,742,0 787,744,0 904,745,0 992,745,0 952,748,0 1300,748,0 1505,748,0 675,749,0 647,752,0 799,753,0 1700,753,0 771,754,0 1573,754,0 919,759,0 1737,759,0 1516,761,0 934,763,0 1629,764,0 1774,764,0 978,765,0 1027,765,0 1687,768,0 821,772,0 1287,772,0 1727,772,0 1502,773,0 683,775,0 749,777,0 729,778,0 940,778,0 1741,778,0 698,779,0 1242,779,0 851,781,0 1657,781,0 1711,782,0 1783,782,0 1628,783,0 903,784,0 959,784,0 983,784,0 761,787,0 776,787,0 1726,789,0 674,790,0 802,791,0 1763,792,0 1647,793,0 1674,794,0 1539,796,0 646,797,0 788,797,0 746,798,0 878,798,0 929,800,0 1783,800,0 1621,801,0 772,802,0 840,802,0 684,803,0 1359,804,0 1659,804,0 1699,804,0 1741,804,0 1490,805,0 1516,808,0 1795,809,0 350,810,0 759,810,0 1832,810,0 711,812,0 787,812,0 903,812,0 825,813,0 960,817,0 1754,817,0 1726,818,0 666,821,0 1771,821,0 1804,821,0 888,822,0 836,824,0 916,827,0 1535,827,0 731,828,0 746,828,0 810,828,0 1817,829,0 960,832,0 1200,833,0 1549,833,0 1659,833,0 1782,833,0 1742,836,0 1804,838,0 728,845,0 786,846,0 1759,846,0 836,847,0 771,848,0 1660,848,0 918,850,0 1781,851,0 1241,852,0 757,854,0 888,856,0 1816,856,0 1743,857,0 673,859,0 1208,861,0 836,862,0 772,863,0 1771,863,0 694,864,0 810,866,0 1556,866,0 1855,866,0 745,867,0 719,868,0 788,868,0 874,869,0 945,870,0 963,870,0 1816,871,0 1539,873,0 916,875,0 1202,875,0 757,877,0 933,879,0 1766,879,0 888,880,0 1828,880,0 810,881,0 1786,881,0 1861,885,0 738,887,0 1230,888,0 1200,890,0 756,892,0 987,892,0 1814,893,0 877,895,0 967,897,0 789,899,0 1800,899,0 718,901,0 859,902,0 815,903,0 944,903,0 1046,904,0 1490,904,0 888,906,0 1842,906,0 757,907,0 828,911,0 987,912,0 1007,912,0 1132,912,0 1876,913,0 1725,917,0 1756,919,0 1038,920,0 1861,920,0 905,921,0 719,922,0 697,924,0 1016,924,0 1456,924,0 1711,924,0 787,927,0 997,927,0 1696,927,0 834,928,0 1083,928,0 1470,930,0 967,931,0 746,932,0 873,933,0 1643,934,0 888,937,0 1132,938,0 1917,938,0 1016,939,0 1881,940,0 723,941,0 915,941,0 944,942,0 1785,942,0 854,943,0 1851,943,0 1489,944,0 1170,946,0 1061,947,0 816,948,0 873,948,0 735,950,0 1670,950,0 764,951,0 1100,953,0 1823,953,0 1889,953,0 1711,954,0 1906,954,0 1045,955,0 1767,955,0 1152,958,0 700,959,0 1860,959,0 895,960,0 948,960,0 1644,960,0 1062,962,0 1930,962,0 816,963,0 874,963,0 1171,963,0 1741,964,0 500,965,0 1462,966,0 1786,966,0 1606,967,0 1016,969,0 1656,969,0 1621,970,0 720,972,0 1906,973,0 1671,974,0 1729,975,0 1868,975,0 674,976,0 816,978,0 444,979,0 946,979,0 1028,979,0 1696,979,0 1767,979,0 836,981,0 918,981,0 1050,981,0 1147,982,0 749,984,0 1643,985,0 1076,986,0 1917,986,0 963,987,0 636,988,0 1553,988,0 1588,988,0 1568,989,0 1735,989,0 1838,990,0 1605,993,0 1163,994,0 1772,994,0 888,995,0 945,995,0 1095,995,0 1121,995,0 648,997,0 1852,997,0 1051,998,0 749,999,0 1888,1000,0 870,1001,0 1076,1001,0 1786,1001,0 964,1002,0 719,1004,0 1177,1004,0 1025,1005,0 774,1006,0 1514,1006,0 1707,1006,0 1801,1006,0 1147,1007,0 1828,1007,0 737,1008,0 1040,1009,0 900,1010,0 1629,1010,0 1872,1010,0 675,1013,0 918,1013,0 1541,1013,0 1740,1013,0 1857,1013,0 1162,1014,0 789,1016,0 1058,1018,0 1126,1018,0 1019,1019,0 1892,1020,0 1917,1021,0 1147,1022,0 690,1023,0 1872,1025,0 738,1026,0 1001,1027,0 1673,1027,0 862,1028,0 1538,1028,0 1633,1029,0 658,1030,0 1782,1030,0 945,1031,0 1606,1031,0 1829,1031,0 889,1032,0 1553,1034,0 1718,1034,0 638,1035,0 848,1036,0 1760,1036,0 1801,1038,0 1098,1039,0 1396,1039,0 622,1040,0 1020,1043,0 1082,1043,0 1159,1043,0 689,1046,0 1047,1046,0 888,1048,0 1429,1049,0 1828,1049,0 747,1052,0 821,1052,0 839,1052,0 867,1052,0 1444,1052,0 1871,1053,0 1099,1054,0 1057,1058,0 1910,1059,0 1751,1060,0 1801,1063,0 1722,1064,0 1857,1064,0 729,1065,0 1132,1067,0 1331,1068,0 1098,1069,0 1842,1069,0 713,1071,0 862,1071,0 1046,1071,0 1265,1072,0 1921,1072,0 903,1073,0 1294,1073,0 1072,1074,0 647,1075,0 1111,1077,0 1880,1077,0 1527,1081,0 1767,1082,0 1782,1082,0 1280,1083,0 1509,1084,0 721,1085,0 1471,1085,0 1140,1087,0 1099,1089,0 1379,1090,0 1853,1090,0 1200,1091,0 663,1093,0 1343,1093,0 1455,1094,0 1899,1094,0 1500,1096,0 1076,1097,0 1304,1097,0 1839,1097,0 1061,1098,0 1392,1098,0 893,1099,0 1117,1099,0 1801,1101,0 1868,1101,0 932,1102,0 1475,1103,0 1189,1104,0 1666,1106,0 674,1107,0 1355,1107,0 701,1110,0 1098,1110,0 912,1111,0 1396,1113,0 1940,1114,0 1005,1115,0 1308,1115,0 1343,1116,0 1369,1116,0 1179,1117,0 1809,1117,0 1047,1119,0 1110,1119,0 1414,1119,0 1879,1119,0 663,1121,0 1032,1121,0 1767,1121,0 1907,1121,0 975,1122,0 1152,1125,0 887,1127,0 1297,1127,0 987,1131,0 1342,1131,0 1405,1131,0 1854,1131,0 922,1132,0 1436,1132,0 1004,1133,0 1179,1133,0 1276,1133,0 1204,1137,0 1385,1137,0 1930,1137,0 1080,1138,0 959,1139,0 1892,1139,0 907,1141,0 1356,1141,0 1873,1141,0 1298,1142,0 1424,1142,0 1845,1143,0 1140,1145,0 1166,1146,0 1475,1146,0 922,1147,0 753,1148,0 974,1149,0 1767,1149,0 1404,1150,0 1829,1150,0 1903,1150,0 1203,1152,0 1343,1154,0 1562,1154,0 1663,1154,0 935,1155,0 1794,1159,0 1809,1159,0 1846,1159,0 1384,1161,0 1253,1163,0 1227,1164,0 1652,1166,0 1204,1167,0 1722,1169,0 1865,1170,0 975,1171,0 1618,1171,0 918,1172,0 1151,1174,0 1265,1174,0 1794,1174,0 1692,1175,0 1902,1175,0 1367,1176,0 1396,1176,0 1321,1178,0 1414,1179,0 1226,1180,0 950,1182,0 1294,1182,0 1433,1182,0 1835,1184,0 1853,1184,0 1276,1185,0 1805,1185,0 1384,1186,0 1152,1189,0 1182,1189,0 1876,1189,0 961,1193,0 1421,1193,0 1903,1193,0 932,1194,0 1245,1195,0 1227,1196,0 983,1198,0 1112,1198,0 1265,1199,0 1846,1199,0 1927,1199,0 1434,1202,0 1306,1206,0 1008,1210,0 968,1214,0 1149,1214,0 1210,1214,0 1290,1216,0 1782,1216,0 1421,1217,0 1168,1219,0 1330,1220,0 995,1223,0 1237,1223,0 1072,1226,0 1184,1227,0 1876,1227,0 1216,1228,0 1275,1228,0 1343,1228,0 967,1229,0 1434,1231,0 1317,1232,0 1651,1236,0 1849,1236,0 1166,1237,0 1263,1237,0 955,1239,0 1899,1239,0 993,1240,0 1048,1240,0 1136,1240,0 1302,1242,0 1412,1242,0 1343,1243,0 1214,1244,0 1154,1246,0 1875,1248,0 1103,1250,0 1252,1250,0 1289,1250,0 1185,1253,0 1436,1253,0 1831,1254,0 1329,1255,0 962,1256,0 1009,1256,0 1166,1259,0 1422,1259,0 1118,1261,0 1452,1262,0 1020,1267,0 1183,1268,0 1211,1268,0 1228,1268,0 1830,1269,0 1784,1273,0 1275,1276,0 1301,1276,0 997,1277,0 1073,1278,0 1113,1278,0 1872,1278,0 1426,1281,0 1246,1282,0 1760,1282,0 945,1283,0 1189,1287,0 1903,1287,0 1820,1289,0 1215,1292,0 1137,1294,0 1236,1294,0 1308,1294,0 1339,1294,0 1414,1294,0 1265,1295,0 1038,1300,0 1819,1304,0 1115,1305,0 1166,1307,0 1414,1309,0 1075,1310,0 1756,1311,0 1237,1312,0 1207,1313,0 1829,1317,0 1283,1319,0 1354,1319,0 1147,1320,0 1809,1320,0 1175,1322,0 1035,1326,0 1847,1327,0 1212,1330,0 1110,1331,0 1339,1332,0 1293,1333,0 1819,1335,0 1410,1336,0 1145,1337,0 1355,1337,0 1185,1338,0 1838,1340,0 1038,1341,0 1440,1341,0 1311,1344,0 1339,1347,0 1827,1351,0 1328,1358,0 1046,1362,0 1393,1362,0 1252,1364,0 1089,1372,0 1283,1373,0 1310,1373,0 1195,1375,0 1768,1376,0 1145,1380,0 1392,1380,0 1839,1380,0 1797,1382,0 1713,1383,0 1441,1384,0 1768,1391,0 1353,1393,0 1325,1394,0 1147,1396,0 1724,1397,0 1307,1398,0 1422,1402,0 1451,1404,0 1061,1406,0 1039,1411,0 1407,1412,0 1233,1415,0 1305,1415,0 1364,1418,0 1766,1420,0 1287,1422,0 1451,1425,0 1038,1426,0 1192,1427,0 1778,1430,0 1078,1431,0 1235,1433,0 1162,1437,0 1285,1437,0 1396,1437,0 1714,1437,0 1264,1439,0 1310,1439,0 1452,1441,0 1058,1442,0 1335,1442,0 1767,1444,0 1133,1446,0 1201,1446,0 1028,1450,0 1077,1452,0 1780,1452,0 1321,1455,0 1727,1455,0 1410,1456,0 1744,1457,0 1016,1465,0 978,1466,0 1778,1467,0 1381,1471,0 1297,1475,0 1282,1478,0 1768,1479,0 1729,1483,0 1360,1485,0 1105,1486,0 1745,1486,0 976,1487,0 1198,1488,0 1414,1488,0 1001,1489,0 1310,1489,0 1088,1490,0 1710,1490,0 1046,1493,0 1387,1494,0 1160,1497,0 1294,1499,0 1768,1504,0 1711,1505,0 1352,1507,0 1107,1508,0 1147,1508,0 1204,1509,0 1333,1509,0 1396,1511,0 1052,1514,0 1162,1514,0 1033,1519,0 1267,1520,0 1773,1520,0 1075,1525,0 1123,1527,0 1177,1527,0 1286,1528,0 1245,1535,0 1734,1535,0 1005,1536,0 1063,1536,0 1088,1536,0 1272,1539,0 1205,1540,0 990,1542,0 1313,1547,0 963,1549,0 1126,1551,0 1009,1552,0 1080,1552,0 1029,1553,0 1065,1557,0 1551,1557,0 1110,1559,0 1138,1560,0 1166,1562,0 1291,1563,0 1204,1564,0 1260,1564,0 1375,1566,0 1305,1569,0 1510,1570,0 966,1572,0 1005,1573,0 1558,1574,0 1230,1575,0 1177,1576,0 1147,1577,0 1272,1579,0 925,1580,0 1589,1580,0 1032,1581,0 1204,1584,0 1287,1585,0 1132,1588,0 975,1590,0 990,1591,0 1011,1592,0 914,1594,0 1051,1596,0 1166,1596,0 963,1599,0 1218,1600,0 1400,1602,0 1000,1603,0 1419,1603,0 1149,1604,0 1179,1604,0 1275,1604,0 1071,1606,0 1023,1610,0 1433,1610,0 1166,1613,0 1132,1615,0 934,1616,0 1059,1619,0 975,1620,0 1032,1622,0 1203,1624,0 1262,1624,0 851,1625,0 903,1625,0 952,1625,0 1175,1625,0 1143,1626,0 1441,1627,0 1001,1628,0 1160,1632,0 1190,1635,0 934,1636,0 1418,1636,0 1458,1636,0 1132,1638,0 1013,1640,0 1173,1642,0 1287,1642,0 1211,1644,0 1440,1644,0 880,1647,0 862,1648,0 963,1650,0 1300,1651,0 1413,1651,0 986,1652,0 1122,1653,0 1186,1653,0 1003,1654,0 905,1655,0 1147,1655,0 1457,1657,0 1429,1658,0 1212,1659,0 1166,1660,0 862,1664,0 1031,1664,0 1414,1666,0 985,1669,0 1013,1669,0 1334,1670,0 876,1671,0 1291,1672,0 1429,1673,0 1187,1676,0 842,1678,0 1073,1678,0 1106,1678,0 1389,1678,0 922,1679,0 1305,1679,0 1320,1679,0 960,1680,0 1004,1681,0 1148,1681,0 1202,1681,0 1226,1681,0 1351,1681,0 1404,1682,0 989,1684,0 1440,1684,0 1290,1687,0 975,1690,0 1016,1690,0 1249,1690,0 1334,1690,0 1186,1691,0 1374,1693,0 903,1694,0 1226,1696,0 1305,1696,0 960,1697,0 1028,1699,0 1346,1699,0 1174,1700,0 858,1701,0 834,1704,0 1122,1704,0 1429,1704,0 1317,1705,0 1150,1707,0 1212,1707,0 1362,1707,0 1392,1707,0 878,1708,0 1227,1711,0 937,1715,0 1092,1716,0 1166,1716,0 1383,1719,0 1332,1720,0 1421,1722,0 974,1723,0 1016,1723,0 1290,1727,0 1175,1728,0 914,1729,0 1140,1730,0 1190,1730,0 1227,1731,0 959,1732,0 1028,1733,0 1317,1738,0 1290,1742,0 1050,1745,0 1140,1745,0 1189,1745,0 1332,1745,0 1027,1749,0 1822,1214,1 465,153,1 1375,1676,1 1041,1226,1 1016,400,1 1096,1483,1 1736,1280,1 1487,925,1 979,451,1 1455,991,1 825,337,1 1795,1229,1 1004,1492,1 847,357,1 949,448,1 667,958,1 1052,1406,1 1079,1561,1 232,175,1 811,355,1 926,586,1 754,350,1 193,169,1 233,149,1 776,410,1 964,1333,1 994,1526,1 422,886,1 1399,1475,1 410,649,1 647,976,1 1066,1420,1 1465,737,1 1291,563,1 686,343,1 1366,1034,1 929,607,1 677,320,1 995,395,1 1375,1631,1 1563,944,1 1339,1385,1 547,985,1 574,872,1 1389,1351,1 731,344,1 1520,755,1 1724,1204,1 1057,1243,1 457,409,1 914,389,1 989,1475,1 1028,417,1 380,722,1 901,1294,1 1046,1426,1 449,223,1 1495,905,1 1690,1029,1 613,391,1 1666,1439,1 1757,1138,1 1379,1051,1 500,1082,1 1787,1379,1 253,157,1 1412,1372,1 430,406,1 679,1298,1 1079,475,1 1276,1591,1 1663,1037,1 487,771,1 860,1335,1 861,249,1 893,387,1 1162,1525,1 1250,782,1 1549,1035,1 637,1111,1 1407,908,1 803,329,1 465,587,1 591,172,1 797,1387,1 1415,671,1 1519,1183,1 1534,1671,1 356,247,1 1757,1283,1 1264,1574,1 1327,1607,1 1508,1282,1 741,1193,1 445,148,1 1077,574,1 500,141,1 393,788,1 800,1148,1 1333,670,1 1327,1443,1 1696,1130,1 994,544,1 1259,721,1 962,478,1 1585,988,1 374,381,1 923,1431,1 935,316,1 1510,1378,1 271,262,1 1151,1383,1 311,785,1 1527,1318,1 1642,1365,1 1643,1213,1 1135,584,1 663,338,1 1313,1625,1 341,423,1 584,143,1 837,1263,1 1481,1371,1 1544,815,1 428,363,1 484,1017,1 1467,973,1 449,465,1 940,517,1 857,1393,1 1232,1532,1 469,217,1 1028,1246,1 965,427,1 1066,1220,1 1780,1129,1 1166,677,1 1328,866,1 1565,1451,1 1609,1306,1 1634,1576,1 922,458,1 266,574,1 454,963,1 495,865,1 515,1096,1 1388,827,1 657,997,1 689,979,1 283,368,1 649,253,1 845,413,1 1181,473,1 1231,1367,1 731,1268,1 983,1498,1 1575,965,1 527,387,1 1520,731,1 710,1138,1 1262,656,1 1355,1405,1 952,580,1 995,515,1 1475,899,1 340,315,1 688,1226,1 1315,686,1 1117,1582,1 1361,767,1 1550,1658,1 1190,1417,1 1684,1423,1 625,368,1 1384,1651,1 537,268,1 256,194,1 1057,521,1 1583,1183,1 1633,1135,1 1659,1190,1 971,1312,1 871,356,1 1457,1439,1 920,1285,1 445,607,1 731,380,1 1153,505,1 327,771,1 519,490,1 329,555,1 1304,619,1 1285,1531,1 307,297,1 1189,560,1 1508,857,1 1119,1478,1 638,187,1 485,124,1 1577,1139,1 1040,503,1 1477,718,1 583,281,1 799,455,1 1551,1437,1 1553,963,1 394,381,1 1521,917,1 1251,1449,1 386,544,1 1569,1041,1 322,656,1 644,319,1 1399,1606,1 1540,861,1 1267,1377,1 407,263,1 1553,1605,1 847,331,1 363,317,1 311,545,1 1147,567,1 1514,1555,1 1564,1541,1 529,925,1 945,621,1 1117,611,1";
+/* ---------- data ---------- */
+const P=RAW.split(" ").map(s=>s.split(",").map(Number));
+const N=P.length, RX=new Float64Array(N), RY=new Float64Array(N), Y=new Uint8Array(N);
+P.forEach((r,i)=>{RX[i]=r[0];RY[i]=r[1];Y[i]=r[2]});
+const NR=Y.reduce((a,b)=>a+b,0), PR=NR/N, BASE=2*PR/(1+PR);
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length, std=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length)};
+const mx=mean(RX),my=mean(RY),sx=std(RX),sy=std(RY);
+const ZX=RX.map(v=>(v-mx)/sx), ZY=RY.map(v=>(v-my)/sy);
+const xmin=Math.min(...RX),xmax=Math.max(...RX),ymin=Math.min(...RY),ymax=Math.max(...RY);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const f3=v=>isFinite(v)?v.toFixed(3):"–", pct=v=>(v*100).toFixed(1)+"%";
+
+/* ---------- seeded RNG ---------- */
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ---------- kNN precompute (standardised space) ---------- */
+const KMAX=50, NI=new Int32Array(N*KMAX), ND=new Float64Array(N*KMAX);
+(function(){
+  const d=new Float64Array(N), idx=new Int32Array(N);
+  for(let i=0;i<N;i++){
+    for(let j=0;j<N;j++){const dx=ZX[i]-ZX[j],dy=ZY[i]-ZY[j];d[j]=j===i?Infinity:dx*dx+dy*dy;idx[j]=j}
+    // partial selection: simple insertion into top-K
+    const bi=new Int32Array(KMAX).fill(-1), bd=new Float64Array(KMAX).fill(Infinity);
+    for(let j=0;j<N;j++){const v=d[j];if(v<bd[KMAX-1]){let p=KMAX-1;while(p>0&&bd[p-1]>v){bd[p]=bd[p-1];bi[p]=bi[p-1];p--}bd[p]=v;bi[p]=j}}
+    for(let k=0;k<KMAX;k++){NI[i*KMAX+k]=bi[k];ND[i*KMAX+k]=Math.sqrt(bd[k])}
+  }
+})();
+const dk=(i,k)=>ND[i*KMAX+k-1];
+
+/* ---------- metrics ---------- */
+function confusion(pred){let tp=0,fp=0,fn=0,tn=0;for(let i=0;i<N;i++){if(pred[i]){Y[i]?tp++:fp++}else{Y[i]?fn++:tn++}}
+  const p=tp+fp?tp/(tp+fp):0,r=tp/(tp+fn),f=p+r?2*p*r/(p+r):0;return{tp,fp,fn,tn,p,r,f,q:(tp+fp)/N}}
+const randF1=q=>q>0?2*PR*q/(PR+q):0;
+function bestMap(lab){const a=confusion(lab), inv=lab.map(v=>1-v), b=confusion(inv);return a.f>=b.f?lab:inv}
+// F1 curve from score (higher = more red)
+function curve(score){const o=Array.from({length:N},(_,i)=>i).sort((a,b)=>score[b]-score[a]);
+  const f=new Float64Array(N+1);let tp=0,ap=0;for(let n=1;n<=N;n++){if(Y[o[n-1]]){tp++;ap+=tp/n}f[n]=2*tp/(n+NR)}return{order:o,f,ap:ap/NR}}
+
+/* ---------- algorithms ---------- */
+function kmeans(seed){const R=rng(seed);let best=null;
+  for(let init=0;init<10;init++){
+    const c=[];c.push(Math.floor(R()*N));
+    // k-means++ second centre
+    const w=new Float64Array(N);let s=0;for(let i=0;i<N;i++){w[i]=(ZX[i]-ZX[c[0]])**2+(ZY[i]-ZY[c[0]])**2;s+=w[i]}
+    let t=R()*s,j=0;while(t>w[j]){t-=w[j];j++}c.push(j);
+    let C=c.map(i=>[ZX[i],ZY[i]]),lab=new Uint8Array(N);
+    for(let it=0;it<100;it++){let ch=0;
+      for(let i=0;i<N;i++){const d0=(ZX[i]-C[0][0])**2+(ZY[i]-C[0][1])**2,d1=(ZX[i]-C[1][0])**2+(ZY[i]-C[1][1])**2,l=d1<d0?1:0;if(l!==lab[i]){lab[i]=l;ch++}}
+      const S=[[0,0,0],[0,0,0]];for(let i=0;i<N;i++){S[lab[i]][0]+=ZX[i];S[lab[i]][1]+=ZY[i];S[lab[i]][2]++}
+      C=S.map((v,k)=>v[2]?[v[0]/v[2],v[1]/v[2]]:C[k]);if(!ch&&it)break}
+    let inertia=0;for(let i=0;i<N;i++)inertia+=(ZX[i]-C[lab[i]][0])**2+(ZY[i]-C[lab[i]][1])**2;
+    if(!best||inertia<best.inertia)best={lab,inertia,C}}
+  return best}
+
+function gmm(seed,K=2){const R=rng(seed);let best=null;
+  for(let init=0;init<5;init++){
+    let mu=[],S=[],w=[];const gc=[[1,0],[0,1]];
+    for(let k=0;k<K;k++){const i=Math.floor(R()*N);mu.push([ZX[i],ZY[i]]);S.push([[1,0],[0,1]]);w.push(1/K)}
+    const r=Array.from({length:K},()=>new Float64Array(N));let ll=-Infinity;
+    for(let it=0;it<200;it++){let L=0;
+      for(let i=0;i<N;i++){const lp=[];for(let k=0;k<K;k++){const a=S[k][0][0],b=S[k][0][1],d=S[k][1][1],det=a*d-b*b,dx=ZX[i]-mu[k][0],dy=ZY[i]-mu[k][1];
+          const m=(d*dx*dx-2*b*dx*dy+a*dy*dy)/det;lp.push(Math.log(w[k])-0.5*m-0.5*Math.log(det)-Math.log(2*Math.PI))}
+        const M=Math.max(...lp);let s=0;for(const v of lp)s+=Math.exp(v-M);const lse=M+Math.log(s);L+=lse;for(let k=0;k<K;k++)r[k][i]=Math.exp(lp[k]-lse)}
+      for(let k=0;k<K;k++){let nk=0,ax=0,ay=0;for(let i=0;i<N;i++){nk+=r[k][i];ax+=r[k][i]*ZX[i];ay+=r[k][i]*ZY[i]}
+        ax/=nk;ay/=nk;let sxx=0,sxy=0,syy=0;for(let i=0;i<N;i++){const dx=ZX[i]-ax,dy=ZY[i]-ay;sxx+=r[k][i]*dx*dx;sxy+=r[k][i]*dx*dy;syy+=r[k][i]*dy*dy}
+        mu[k]=[ax,ay];S[k]=[[sxx/nk+1e-6,sxy/nk],[sxy/nk,syy/nk+1e-6]];w[k]=nk/N}
+      if(Math.abs(L-ll)<1e-6*Math.abs(L))break;ll=L}
+    if(!best||ll>best.ll)best={ll,mu,S,w,r}}
+  return best}
+
+function fcm(m,seed){const R=rng(seed);const U=[new Float64Array(N),new Float64Array(N)];for(let i=0;i<N;i++){const a=R();U[0][i]=a;U[1][i]=1-a}
+  let C;for(let it=0;it<300;it++){C=[0,1].map(k=>{let sw=0,ax=0,ay=0;for(let i=0;i<N;i++){const u=U[k][i]**m;sw+=u;ax+=u*ZX[i];ay+=u*ZY[i]}return[ax/sw,ay/sw]});
+    let dmax=0;const e=2/(m-1);
+    for(let i=0;i<N;i++){const d0=Math.hypot(ZX[i]-C[0][0],ZY[i]-C[0][1])+1e-12,d1=Math.hypot(ZX[i]-C[1][0],ZY[i]-C[1][1])+1e-12;
+      const u0=1/(1+(d0/d1)**e);dmax=Math.max(dmax,Math.abs(u0-U[0][i]));U[0][i]=u0;U[1][i]=1-u0}
+    if(dmax<1e-5)break}
+  return{U,C}}
+
+function dbscan(eps,minPts){const lab=new Int32Array(N).fill(-2),e2=eps*eps;
+  const region=i=>{const o=[];for(let j=0;j<N;j++){const dx=ZX[i]-ZX[j],dy=ZY[i]-ZY[j];if(dx*dx+dy*dy<=e2)o.push(j)}return o};
+  let c=0;for(let i=0;i<N;i++){if(lab[i]!==-2)continue;const nb=region(i);if(nb.length<minPts){lab[i]=-1;continue}
+    lab[i]=c;const q=nb.slice();for(let h=0;h<q.length;h++){const j=q[h];if(lab[j]===-1)lab[j]=c;if(lab[j]!==-2)continue;lab[j]=c;const nj=region(j);if(nj.length>=minPts)for(const t of nj)q.push(t)}c++}
+  return{lab,nc:c}}
+
+function lnnd(k){const s=new Float64Array(N);for(let i=0;i<N;i++){let a=0;for(let t=0;t<k;t++)a+=dk(NI[i*KMAX+t],k);s[i]=dk(i,k)/(a/k)}return s}
+function lof(k){const lrd=new Float64Array(N);for(let i=0;i<N;i++){let a=0;for(let t=0;t<k;t++){const j=NI[i*KMAX+t];a+=Math.max(dk(j,k),ND[i*KMAX+t])}lrd[i]=k/a}
+  const s=new Float64Array(N);for(let i=0;i<N;i++){let a=0;for(let t=0;t<k;t++)a+=lrd[NI[i*KMAX+t]];s[i]=a/k/lrd[i]}return s}
+function kdist(k){const s=new Float64Array(N);for(let i=0;i<N;i++)s[i]=dk(i,k);return s}
+function knnSup(k){const s=new Float64Array(N);for(let i=0;i<N;i++){let a=0;for(let t=0;t<k;t++)a+=Y[NI[i*KMAX+t]];s[i]=a/k+1e-6*dk(i,1)}return s} // leave-one-out (self excluded)
+
+/* ---------- method registry ---------- */
+const METHODS=[
+ {id:"base",name:"All red (baseline)",grp:"Reference",type:"hard",params:[],
+  run:()=>({pred:new Uint8Array(N).fill(1)}),
+  desc:"Predict every point red. This is the floor every method must beat. Its F1 of 2p/(1+p) = 0.239 matches what many notebook methods reported."},
+ {id:"km",name:"K-Means (k=2)",grp:"Global clustering",type:"hard",params:[{k:"seed",l:"Random seed",min:1,max:20,v:1}],
+  run:p=>{const r=kmeans(p.seed);return{pred:bestMap(r.lab),centers:r.C}},
+  desc:"K-Means splits the plane with one straight line between two centroids. The classes share the same centroid, so the cut is geometric and each half holds about the same share of reds. Cluster-to-colour mapping is chosen with labels, as in the notebook."},
+ {id:"gmm",name:"Gaussian Mixture (2, full)",grp:"Global clustering",type:"score",params:[{k:"seed",l:"Random seed",min:1,max:20,v:1}],
+  run:p=>{const g=gmm(p.seed);const c=curve(g.r[0]),c2=curve(g.r[1]);const k=c.ap>=c2.ap?0:1;return{score:g.r[k],gmm:g,redComp:k}},
+  desc:"The README's top recommendation. EM fits two full-covariance Gaussians, but the data is close to a single uniform blob, so it finds two halves of space. Ellipses show 1σ and 2σ. The F1 curve sits on the random line, which means the posterior carries no colour information."},
+ {id:"fcm",name:"Fuzzy C-Means",grp:"Global clustering",type:"score",params:[{k:"m",l:"Fuzzifier m",min:1.2,max:3,step:.1,v:2},{k:"seed",l:"Random seed",min:1,max:20,v:1}],
+  run:p=>{const r=fcm(p.m,p.seed);const a=curve(r.U[0]),b=curve(r.U[1]);const k=a.ap>=b.ap?0:1;return{score:r.U[k],centers:r.C}},
+  desc:"Soft K-Means, ported from the notebook's NumPy version. Memberships are smooth functions of distance to two centres, so the same problem applies: the centres don't depend on colour. The notebook reported F1 0.218."},
+ {id:"db",name:"DBSCAN",grp:"Density clustering",type:"hard",params:[{k:"eps",l:"eps (std units)",min:.02,max:.4,step:.01,v:.08},{k:"minPts",l:"min_samples",min:2,max:20,v:5}],
+  run:p=>{const r=dbscan(p.eps,p.minPts);const sz={};for(const l of r.lab)if(l>=0)sz[l]=(sz[l]||0)+1;let big=-1,bs=0;for(const k in sz)if(sz[k]>bs){bs=sz[k];big=+k}
+    return{pred:Uint8Array.from(r.lab,l=>l===big?0:1),note:`${r.nc} clusters · ${r.lab.filter(l=>l<0).length} noise points`}},
+  desc:"Points outside the largest density-connected cluster are labelled red. A small eps makes everything noise, which is all red, which gives 0.239: the notebook's “best” eps = 0.05 setting. A large eps merges everything into one cluster."},
+ {id:"kd",name:"k-NN distance",grp:"Local anomaly scores",type:"score",params:[{k:"k",l:"k",min:1,max:50,v:10}],
+  run:p=>({score:kdist(p.k)}),
+  desc:"<b>The best label-free method found here.</b> Score = distance to the k-th nearest neighbour, with no labels and no normalisation. Red points sit in emptier areas, so the sparsest 13.6% are much richer in red: F1 0.39 at k = 10 and 0.46 at k = 5, compared with 0.41 for the notebook's supervised SVM."},
+ {id:"lnnd",name:"LNND",grp:"Local anomaly scores",type:"score",params:[{k:"k",l:"k",min:2,max:50,v:10}],
+  run:p=>({score:lnnd(p.k)}),
+  desc:"<b>Local Nearest-Neighbour Distance</b>, the best label-free method in the notebook (F1 0.295 at k = 10). Score = d<sub>k</sub>(p) divided by the mean d<sub>k</sub> of p's neighbours, which is high when a point is sparser than its surroundings. Flag the top 13.6% to match the notebook's percentile threshold."},
+ {id:"lof",name:"Local Outlier Factor",grp:"Local anomaly scores",type:"score",params:[{k:"k",l:"k",min:2,max:50,v:20}],
+  run:p=>({score:lof(p.k)}),
+  desc:"LOF (Breunig et al.) is the textbook version of the LNND idea, using reachability distance and local reachability density. overlay_advanced_tuning.py suggests it as a GMM weight."},
+ {id:"sup",name:"k-NN classifier (LOO)",grp:"Supervised ceiling",type:"score",sup:true,params:[{k:"k",l:"k",min:1,max:50,v:15}],
+  run:p=>({score:knnSup(p.k)}),
+  desc:"<b>Uses labels.</b> Score = share of red among the k nearest neighbours, leaving the point itself out. This shows how far the local signal can go when colour is known. It is comparable to the notebook's supervised SVM (test F1 0.41)."}
+];
+
+/* ---------- lab state ---------- */
+const state={m:"kd",params:{},frac:PR,view:"outcome",res:null,curve:null};
+METHODS.forEach(m=>{state.params[m.id]={};m.params.forEach(p=>state.params[m.id][p.k]=p.v)});
+const cache={};
+
+function runMethod(id){const m=METHODS.find(x=>x.id===id),p=state.params[id],key=id+JSON.stringify(p);
+  if(!cache[key]){const r=m.run(p);if(r.score){r.curve=curve(r.score)}cache[key]=r}return cache[key]}
+function predOf(r){if(r.pred)return r.pred;const n=Math.max(1,Math.round(state.frac*N)),pr=new Uint8Array(N);for(let t=0;t<n;t++)pr[r.curve.order[t]]=1;return pr}
+
+/* ---------- method list UI ---------- */
+const mEl=document.getElementById("methods");
+function bestF1(id){const m=METHODS.find(x=>x.id===id);const r=runMethod(id);if(r.pred)return confusion(r.pred).f;const n=Math.round(PR*N);return r.curve.f[n]}
+function renderMethods(){mEl.innerHTML="";let g="";
+  METHODS.forEach(m=>{if(m.grp!==g){g=m.grp;const d=document.createElement("div");d.className="grp";d.textContent=g;mEl.appendChild(d)}
+    const b=document.createElement("button");b.className="mbtn"+(m.id===state.m?" on":"");
+    b.innerHTML=`<span>${m.name}</span><span style="display:flex;gap:6px;align-items:center">${m.sup?'<span class="tag sup">labels</span>':""}<span class="f" id="mf_${m.id}"></span></span>`;
+    b.onclick=()=>{state.m=m.id;if(m.type==="score")state.frac=PR;renderMethods();renderControls();update()};mEl.appendChild(b)})
+  METHODS.forEach(m=>{const k=m.id+JSON.stringify(state.params[m.id]);if(cache[k]){const el=document.getElementById("mf_"+m.id);if(el)el.textContent=f3(bestF1(m.id))}})}
+function renderControls(){const m=METHODS.find(x=>x.id===state.m),c=document.getElementById("controls");c.innerHTML="";
+  m.params.forEach(p=>{const d=document.createElement("div");d.className="ctl";const v=state.params[m.id][p.k];
+    d.innerHTML=`<label>${p.l} <b>${v}</b></label><input type="range" min="${p.min}" max="${p.max}" step="${p.step||1}" value="${v}">`;
+    const inp=d.querySelector("input"),lb=d.querySelector("b");let tmr;
+    inp.oninput=()=>{const val=+inp.value;lb.textContent=val;state.params[m.id][p.k]=val;clearTimeout(tmr);busy(true);tmr=setTimeout(()=>{update();renderMethods()},m.id==="db"?120:30)};
+    c.appendChild(d)});
+  if(m.type==="score"){const d=document.createElement("div");d.className="ctl";d.innerHTML=`<label>Flag top <b id="fracLbl"></b></label><input id="fracSl" type="range" min="0.005" max="1" step="0.005" value="${state.frac}">`;
+    c.appendChild(d);d.querySelector("input").oninput=e=>{state.frac=+e.target.value;update(true)};
+    const b=document.createElement("button");b.className="themebtn";b.style.marginTop="8px";b.textContent="Reset to 13.6% (red share)";b.onclick=()=>{state.frac=PR;update(true)};c.appendChild(b)}}
+function busy(on){document.getElementById("busy").textContent=on?"computing…":""}
+
+/* ---------- scatter ---------- */
+function setupCanvas(cv,aspect){const w=cv.parentElement.clientWidth,h=Math.round(w*aspect),dpr=window.devicePixelRatio||1;cv.width=w*dpr;cv.height=h*dpr;cv.style.height=h+"px";const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);return{ctx,w,h}}
+function mapper(w,h,pad=14){const sc=Math.min((w-2*pad)/(xmax-xmin),(h-2*pad)/(ymax-ymin)),ox=(w-sc*(xmax-xmin))/2,oy=(h-sc*(ymax-ymin))/2;
+  return{px:x=>ox+(x-xmin)*sc,py:y=>h-oy-(y-ymin)*sc,sc}}
+function mark(ctx,x,y,isRed,col,r){ctx.strokeStyle=col;ctx.fillStyle=col;if(isRed){ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill()}else{ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x-r,y-r);ctx.lineTo(x+r,y+r);ctx.moveTo(x+r,y-r);ctx.lineTo(x-r,y+r);ctx.stroke()}}
+let geo=null;
+function drawScatter(){const cv=document.getElementById("canvas"),{ctx,w,h}=setupCanvas(cv,0.86),M=mapper(w,h);geo={M,w,h};
+  ctx.fillStyle=css("--surface-2");ctx.fillRect(0,0,w,h);
+  const r=state.res,pred=predOf(r),v=state.view,rr=Math.max(2,Math.min(3.4,w/240));
+  const C={tp:css("--tp"),fp:css("--fp"),fn:css("--fn"),tn:css("--tn"),red:css("--red"),green:css("--green")};
+  let smin=0,smax=1;if(r.score){const o=r.curve.order;smax=r.score[o[0]];smin=r.score[o[N-1]];}
+  // draw order: TN first, then others
+  const order=[];for(let i=0;i<N;i++)order.push(i);order.sort((a,b)=>(Y[a]+pred[a]*2)-(Y[b]+pred[b]*2));
+  for(const i of order){const x=M.px(RX[i]),y=M.py(RY[i]);let col;
+    if(v==="truth")col=Y[i]?C.red:C.green;
+    else if(v==="score"&&r.score){const t=(r.score[i]-smin)/(smax-smin||1);col=`hsl(${220-200*Math.pow(t,.7)} 80% ${45+10*t}%)`}
+    else col=pred[i]?(Y[i]?C.tp:C.fp):(Y[i]?C.fn:C.tn);
+    ctx.globalAlpha=(v==="outcome"&&!pred[i]&&!Y[i])?.75:.95;mark(ctx,x,y,Y[i],col,Y[i]?rr*.95:rr*.8)}
+  ctx.globalAlpha=1;
+  const toPx=(zx,zy)=>[M.px(zx*sx+mx),M.py(zy*sy+my)];
+  if(r.gmm){r.gmm.mu.forEach((mu,k)=>{const S=r.gmm.S[k],a=S[0][0],b=S[0][1],d=S[1][1],tr=(a+d)/2,dt=Math.sqrt(((a-d)/2)**2+b*b),l1=tr+dt,l2=tr-dt,ang=Math.atan2(l1-a,b||1e-9);
+    [1,2].forEach(s=>{ctx.beginPath();for(let t=0;t<=64;t++){const th=t/64*2*Math.PI,ex=s*Math.sqrt(l1)*Math.cos(th),ey=s*Math.sqrt(l2)*Math.sin(th);
+      const zx=mu[0]+ex*Math.cos(ang)-ey*Math.sin(ang),zy=mu[1]+ex*Math.sin(ang)+ey*Math.cos(ang);const[p,q]=toPx(zx,zy);t?ctx.lineTo(p,q):ctx.moveTo(p,q)}
+      ctx.strokeStyle=k===r.redComp?C.red:css("--text");ctx.globalAlpha=s===1?.85:.4;ctx.lineWidth=2;ctx.setLineDash(s===2?[5,4]:[]);ctx.stroke()})});ctx.setLineDash([]);ctx.globalAlpha=1}
+  if(r.centers){r.centers.forEach(c=>{const[p,q]=toPx(c[0],c[1]);ctx.fillStyle=css("--text");ctx.strokeStyle=css("--surface");ctx.lineWidth=3;ctx.beginPath();ctx.arc(p,q,7,0,7);ctx.stroke();ctx.fill()})}
+  // legend
+  const lg=document.getElementById("legend");
+  if(v==="truth")lg.innerHTML=`<span><i style="background:var(--red)"></i>red (truth)</span><span><i style="background:var(--green)"></i>green (truth)</span>`;
+  else if(v==="score"&&r.score)lg.innerHTML=`<span><i style="background:hsl(220 80% 45%)"></i>low score</span><span><i style="background:hsl(20 80% 55%)"></i>high score (more likely red)</span>`;
+  else lg.innerHTML=`<span><i style="background:var(--tp)"></i>TP: red found</span><span><i style="background:var(--fn)"></i>FN: red missed</span><span><i style="background:var(--fp)"></i>FP: green flagged</span><span><i style="background:var(--tn)"></i>TN</span><span>● red · × green</span>`;
+}
+// tooltip
+(function(){const cv=document.getElementById("canvas"),tip=document.getElementById("tip");
+  cv.addEventListener("mousemove",e=>{if(!geo)return;const b=cv.getBoundingClientRect(),x=e.clientX-b.left,y=e.clientY-b.top;let bi=-1,bd=100;
+    for(let i=0;i<N;i++){const d=(geo.M.px(RX[i])-x)**2+(geo.M.py(RY[i])-y)**2;if(d<bd){bd=d;bi=i}}
+    if(bi<0){tip.style.display="none";return}const r=state.res,pred=predOf(r);
+    tip.innerHTML=`#${bi} · (${RX[bi]}, ${RY[bi]})<br>truth <b style="color:var(${Y[bi]?"--red":"--green"})">${Y[bi]?"red":"green"}</b> · predicted <b>${pred[bi]?"red":"green"}</b>${r.score?`<br>score ${r.score[bi].toFixed(3)}`:""}<br>d<sub>10</sub> = ${dk(bi,10).toFixed(3)} σ`;
+    tip.style.display="block";tip.style.left=Math.min(x+12,b.width-170)+"px";tip.style.top=(y+12)+"px"});
+  cv.addEventListener("mouseleave",()=>tip.style.display="none")})();
+
+/* ---------- F1 curve ---------- */
+function svgEl(t,a){const e=document.createElementNS("http://www.w3.org/2000/svg",t);for(const k in a)e.setAttribute(k,a[k]);return e}
+function lineChart(svg,W,H,pad,series,opts){svg.innerHTML="";const[L,R,T,B]=pad,xm=opts.xmax||1,ym=opts.ymax;
+  const X=v=>L+(W-L-R)*v/xm,Yp=v=>H-B-(H-T-B)*v/ym;
+  for(let g=0;g<=4;g++){const v=ym*g/4;svg.appendChild(svgEl("line",{x1:L,x2:W-R,y1:Yp(v),y2:Yp(v),class:"ax","stroke-width":1}));const t=svgEl("text",{x:L-6,y:Yp(v)+4,"text-anchor":"end"});t.textContent=v.toFixed(2);svg.appendChild(t)}
+  for(let g=0;g<=4;g++){const v=xm*g/4,t=svgEl("text",{x:X(v),y:H-B+15,"text-anchor":"middle"});t.textContent=opts.xfmt?opts.xfmt(v):v;svg.appendChild(t)}
+  if(opts.xlabel){const t=svgEl("text",{x:(L+W-R)/2,y:H-2,"text-anchor":"middle"});t.textContent=opts.xlabel;svg.appendChild(t)}
+  series.forEach(s=>{let d="";s.pts.forEach(([x,y],i)=>d+=(i?"L":"M")+X(x).toFixed(1)+","+Yp(y).toFixed(1));svg.appendChild(svgEl("path",{d,fill:"none",stroke:s.color,"stroke-width":s.w||2,"stroke-dasharray":s.dash||"",opacity:s.op||1}))});
+  return{X,Yp,L,R,T,B}}
+function drawCurve(){const box=document.getElementById("curveBox"),r=state.res;box.style.display=r.curve?"":"none";if(!r.curve)return;
+  const svg=document.getElementById("curveSvg"),f=r.curve.f,pts=[],rp=[];for(let n=1;n<=N;n+=3){pts.push([n/N,f[n]]);rp.push([n/N,randF1(n/N)])}
+  const ym=Math.max(.5,Math.ceil(Math.max(...f)*10)/10);
+  const ax=lineChart(svg,360,170,[34,8,8,30],[{pts:rp,color:css("--base"),dash:"4 3",w:1.5},{pts,color:css("--accent"),w:2.2}],{ymax:ym,xfmt:v=>Math.round(v*100)+"%",xlabel:"fraction flagged as red"});
+  const n=Math.max(1,Math.round(state.frac*N)),x=ax.X(n/N);
+  svg.appendChild(svgEl("line",{x1:x,x2:x,y1:8,y2:140,stroke:css("--text"),"stroke-width":1,opacity:.5}));
+  svg.appendChild(svgEl("circle",{cx:x,cy:ax.Yp(f[n]),r:4.5,fill:css("--accent"),stroke:css("--surface"),"stroke-width":2}));
+  const t=svgEl("text",{x:Math.min(x+6,300),y:20});t.textContent=`AP ${r.curve.ap.toFixed(3)}`;svg.appendChild(t);
+  const set=e=>{const b=svg.getBoundingClientRect(),vx=(e.clientX-b.left)/b.width*360;state.frac=Math.min(1,Math.max(1/N,(vx-34)/(360-42)));update(true)};
+  svg.onpointerdown=e=>{svg.setPointerCapture(e.pointerId);set(e);svg.onpointermove=set};svg.onpointerup=()=>svg.onpointermove=null}
+
+/* ---------- update ---------- */
+function update(fast){const m=METHODS.find(x=>x.id===state.m);state.res=runMethod(state.m);busy(false);
+  const pred=predOf(state.res),c=confusion(pred);
+  document.getElementById("mF1").textContent=f3(c.f);document.getElementById("mP").textContent=f3(c.p);document.getElementById("mR").textContent=f3(c.r);
+  const rf=randF1(c.q),li=document.getElementById("mLift"),d=c.f-rf;li.textContent=(d>=0?"+":"")+d.toFixed(3);li.className="v lift "+(d>0.01?"up":"dn");
+  document.getElementById("cm").innerHTML=`<div class="h"></div><div class="h">pred red</div><div class="h">pred green</div><div class="h">true red</div><div style="color:var(--tp);font-weight:600">${c.tp}</div><div style="color:var(--fn)">${c.fn}</div><div class="h">true green</div><div style="color:var(--fp)">${c.fp}</div><div>${c.tn}</div>`;
+  const fl=document.getElementById("fracLbl");if(fl){fl.textContent=`${pct(state.frac)} (${Math.round(state.frac*N)} pts)`;document.getElementById("fracSl").value=state.frac}
+  document.getElementById("mDesc").innerHTML=m.desc+(state.res.note?`<br><span class="mono">${state.res.note}</span>`:"")+`<br><span style="color:var(--faint)">Flagged ${pct(c.q)} of points. A random guess at that rate scores F1 ${rf.toFixed(3)}.</span>`;
+  document.querySelector('#viewSeg [data-v="score"]').disabled=!state.res.score;if(!state.res.score&&state.view==="score")setView("outcome");
+  drawScatter();drawCurve();const el=document.getElementById("mf_"+m.id);if(el)el.textContent=f3(bestF1(m.id))}
+function setView(v){state.view=v;document.querySelectorAll("#viewSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===v))}
+document.querySelectorAll("#viewSeg button").forEach(b=>b.onclick=()=>{setView(b.dataset.v);drawScatter()});
+
+/* ---------- problem section ---------- */
+function problem(){document.getElementById("tN").textContent=N.toLocaleString();document.getElementById("tR").textContent=NR;document.getElementById("tG").textContent=N-NR;document.getElementById("tRp").textContent=pct(PR)+" of points";
+  const sel=(a,c)=>Array.from(a).filter((_,i)=>Y[i]===c);const rows=[["Mean X",mean,RX],["Std X",std,RX],["Mean Y",mean,RY],["Std Y",std,RY]];
+  let h="<tr><th></th><th style='color:var(--red)'>red</th><th style='color:var(--green)'>green</th><th>Δ / σ</th></tr>";
+  rows.forEach(([n,f,a])=>{const r=f(sel(a,1)),g=f(sel(a,0)),s=std(a);h+=`<tr><td>${n}</td><td>${r.toFixed(1)}</td><td>${g.toFixed(1)}</td><td>${(Math.abs(r-g)/s).toFixed(3)}</td></tr>`});
+  document.getElementById("classStats").innerHTML=h;
+  const zr=[mean(sel(ZX,1)),mean(sel(ZY,1))],zg=[mean(sel(ZX,0)),mean(sel(ZY,0))];document.getElementById("tSep").textContent=Math.hypot(zr[0]-zg[0],zr[1]-zg[1]).toFixed(3)+" σ";
+  document.getElementById("bF1").textContent=BASE.toFixed(4)}
+let miniMode="blind";
+function drawMini(){const cv=document.getElementById("miniCanvas"),{ctx,w,h}=setupCanvas(cv,0.62),M=mapper(w,h,8);ctx.fillStyle=css("--surface-2");ctx.fillRect(0,0,w,h);
+  const gr=css("--faint"),R=css("--red"),G=css("--green");for(let i=0;i<N;i++){const isR=Y[i];mark(ctx,M.px(RX[i]),M.py(RY[i]),isR,miniMode==="blind"?gr:(isR?R:G),isR?2.4:2)}}
+document.querySelectorAll("#miniSeg button").forEach(b=>b.onclick=()=>{miniMode=b.dataset.v;document.querySelectorAll("#miniSeg button").forEach(x=>x.classList.toggle("on",x===b));drawMini()});
+
+/* ---------- trap ---------- */
+function trap(){const q=+document.getElementById("qSl").value/100;document.getElementById("qLbl").textContent=Math.round(q*100)+"%";
+  document.getElementById("qP").textContent=PR.toFixed(3);document.getElementById("qR").textContent=q.toFixed(3);document.getElementById("qF").textContent=randF1(q).toFixed(3);
+  const svg=document.getElementById("trapSvg"),pts=[];for(let i=1;i<=200;i++)pts.push([i/200,randF1(i/200)]);
+  const ax=lineChart(svg,460,250,[38,12,12,34],[{pts,color:css("--accent"),w:2.4}],{ymax:.3,xfmt:v=>Math.round(v*100)+"%",xlabel:"fraction of points flagged red (at random)"});
+  svg.appendChild(svgEl("line",{x1:ax.L,x2:460-ax.R,y1:ax.Yp(BASE),y2:ax.Yp(BASE),stroke:css("--text"),"stroke-dasharray":"4 4",opacity:.4}));
+  const t=svgEl("text",{x:ax.L+6,y:ax.Yp(BASE)-6});t.textContent="0.239: all red";svg.appendChild(t);
+  svg.appendChild(svgEl("circle",{cx:ax.X(q),cy:ax.Yp(randF1(q)),r:5,fill:css("--accent"),stroke:css("--surface"),"stroke-width":2}))}
+document.getElementById("qSl").oninput=trap;
+
+/* ---------- signal ---------- */
+function signal(){const k=+document.getElementById("kSig").value;document.getElementById("kSigLbl").textContent=k;
+  const r=[],g=[];for(let i=0;i<N;i++)(Y[i]?r:g).push(dk(i,k));
+  const all=r.concat(g).sort((a,b)=>a-b),hi=all[Math.floor(N*.99)],B=28,bw=hi/B;
+  const hr=new Array(B).fill(0),hg=new Array(B).fill(0);r.forEach(v=>hr[Math.min(B-1,Math.floor(v/bw))]++);g.forEach(v=>hg[Math.min(B-1,Math.floor(v/bw))]++);
+  const nr=hr.map(v=>v/r.length),ng=hg.map(v=>v/g.length),ym=Math.max(...nr,...ng)*1.1;
+  const svg=document.getElementById("histSvg"),toPts=a=>{const p=[];a.forEach((v,i)=>{p.push([i*bw,v]);p.push([(i+1)*bw,v])});return p};
+  lineChart(svg,460,230,[38,10,10,34],[{pts:toPts(ng),color:css("--green"),w:2.2},{pts:toPts(nr),color:css("--red"),w:2.2}],{xmax:hi,ymax:ym,xfmt:v=>v.toFixed(2),xlabel:`distance to ${k}-th neighbour (σ units), share of class`});
+  document.getElementById("histNote").textContent=`median: red ${median(r).toFixed(3)} vs green ${median(g).toFixed(3)} (×${(median(r)/median(g)).toFixed(2)})`;
+  // homophily
+  const fr=[],fg=[];for(let i=0;i<N;i++){let a=0;for(let t=0;t<k;t++)a+=Y[NI[i*KMAX+t]];(Y[i]?fr:fg).push(a/k)}
+  const H=k+1,cr=new Array(H).fill(0),cg=new Array(H).fill(0);fr.forEach(v=>cr[Math.round(v*k)]++);fg.forEach(v=>cg[Math.round(v*k)]++);
+  const svg2=document.getElementById("homSvg");svg2.innerHTML="";const L=38,Rr=10,T=10,Bb=34,W=460,Hh=230,cw=(W-L-Rr)/H,ym2=Math.max(...cr.map(v=>v/fr.length),...cg.map(v=>v/fg.length))*1.1;
+  for(let gl=0;gl<=4;gl++){const v=ym2*gl/4,yy=Hh-Bb-(Hh-T-Bb)*v/ym2;svg2.appendChild(svgEl("line",{x1:L,x2:W-Rr,y1:yy,y2:yy,class:"ax"}));const t=svgEl("text",{x:L-6,y:yy+4,"text-anchor":"end"});t.textContent=(v*100).toFixed(0)+"%";svg2.appendChild(t)}
+  for(let j=0;j<H;j++){[[cg[j]/fg.length,css("--green"),0],[cr[j]/fr.length,css("--red"),1]].forEach(([v,c,o])=>{const hgt=(Hh-T-Bb)*v/ym2;svg2.appendChild(svgEl("rect",{x:L+j*cw+cw*(.1+o*.4),y:Hh-Bb-hgt,width:cw*.38,height:hgt,fill:c,rx:1.5}))});
+    if(H<=21||j%2===0){const t=svgEl("text",{x:L+j*cw+cw/2,y:Hh-Bb+14,"text-anchor":"middle"});t.textContent=j;svg2.appendChild(t)}}
+  const t=svgEl("text",{x:(L+W-Rr)/2,y:Hh-2,"text-anchor":"middle"});t.textContent=`number of red points among ${k} nearest neighbours`;svg2.appendChild(t);
+  document.getElementById("homNote").innerHTML=`On average a <b style="color:var(--red)">red</b> point has <b>${(mean(fr)*100).toFixed(1)}%</b> red neighbours and a <b style="color:var(--green)">green</b> point has <b>${(mean(fg)*100).toFixed(1)}%</b>. The global rate is ${pct(PR)}. Reds cluster in small pockets, which is what a supervised k-NN or SVM picks up.`}
+const median=a=>{const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)]};
+document.getElementById("kSig").oninput=signal;
+
+/* ---------- notebook results ---------- */
+const NB=[
+ ["DBSCAN",.2391,0,"= all-red: everything became noise"],["Agglomerative",.2220,0],["Fuzzy C-Means",.2183,0],["t-SNE + DBSCAN",.2391,0,"= all-red"],
+ ["Spectral (kNN affinity)",.2166,0],["ICA + DBSCAN",.2391,0,"= all-red"],["ICA + Agglomerative",.2216,0],["ICA + GMM",.2490,0],["ICA + Spectral",.2159,0],["ICA + K-Means",.2515,0],
+ ["KDE density ratio",.2391,1,"fits KDE per colour; = all-red"],["Hyperbolic graph (Poincaré)",.2187,0],["Hyperbolic GCN (t-SNE edges)",.2600,0,"gradient errors: untrained; re-run gave 0.239"],
+ ["Logistic regression (balanced)",.2334,1,"supervised, test split"],["SVM RBF, tuned threshold",.4149,1,"supervised, test split; CV 0.376"],
+ ["One-Class SVM",.2373,1,"trained on green only"],["LNND (k=10)",.2952,0,"k chosen by F1 against labels"],["OCSVM + LNND combined",.2261,1],
+ ["k-NN distance, k=10 (this page)",.3877,0,"no labels, flag top 13.6%; k=5 gives 0.458"]
+];
+function results(mode){const el=document.getElementById("bars"),rows=NB.map((r,i)=>({n:r[0],f:r[1],sup:r[2],note:r[3],i}));if(mode==="score")rows.sort((a,b)=>b.f-a.f);
+  const xm=.5;el.innerHTML="";rows.forEach(r=>{const col=r.n.includes("this page")?"var(--good)":r.sup?"var(--warn)":(r.f>BASE+.005?"var(--accent)":"var(--base)");
+    const d=document.createElement("div");d.className="row";d.title=r.note||"";
+    d.innerHTML=`<div>${r.n}${r.note?`<div style="font-size:11.5px;color:var(--faint);line-height:1.3">${r.note}</div>`:""}</div><div class="track"><div class="fill" style="width:${r.f/xm*100}%;background:${col}"></div><div class="bl" style="left:${BASE/xm*100}%"></div></div><div class="num">${r.f.toFixed(3)}</div>`;el.appendChild(d)})}
+document.querySelectorAll("#resSeg button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#resSeg button").forEach(x=>x.classList.toggle("on",x===b));results(b.dataset.v)});
+
+/* ---------- theme ---------- */
+document.getElementById("themeBtn").onclick=()=>{const r=document.documentElement,cur=r.dataset.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");r.dataset.theme=cur==="dark"?"light":"dark";try{localStorage.setItem("theme",r.dataset.theme)}catch(e){}redraw()};
+try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>redraw());
+
+function redraw(){drawMini();trap();signal();update()}
+let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{drawMini();drawScatter()},120)});
+
+/* ---------- init ---------- */
+problem();results("score");renderMethods();renderControls();redraw();
+// warm cache for list badges
+setTimeout(()=>{METHODS.forEach(m=>runMethod(m.id));renderMethods()},50);
+</script>
+</body>
+</html>
