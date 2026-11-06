@@ -5,6 +5,7 @@
 # SETUP & IMPORTS
 # ============================================================================
 
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,13 +17,22 @@ from sklearn.decomposition import PCA, FastICA
 from sklearn.manifold import TSNE
 import warnings
 warnings.filterwarnings('ignore')
+np.random.seed(42)
+
+
+def minority_is_one(labels):
+    """Label-free, stable orientation: call the smaller cluster 1 (red is the minority class)."""
+    labels = np.asarray(labels).astype(int)
+    return 1 - labels if labels.sum() > len(labels) / 2 else labels
 
 # For Colab: Download and load data
-# !wget -q "https://your-cloud-url/df_red_green_overlay.csv" -O df_red_green_overlay.csv
+# !wget -q "https://raw.githubusercontent.com/D2718281828nis/ML-overlay-problem/main/df_red_green_distinct.csv"
 # Or upload directly in Colab with: from google.colab import files; files.upload()
 
-# Load data
-df = pd.read_csv('df_red_green_overlay.csv')
+# Load data (Gaussian red / uniform green; set OVERLAY_DATA=df_red_green_overlay.csv for the original)
+DATA_FILE = os.environ.get('OVERLAY_DATA', 'df_red_green_distinct.csv')
+df = pd.read_csv(DATA_FILE)
+print("Data file:", DATA_FILE)
 
 print("Dataset shape:", df.shape)
 print("\nFirst few rows:")
@@ -45,8 +55,7 @@ gmm = GaussianMixture(n_components=2, random_state=42, n_init=20, covariance_typ
 gmm_labels = gmm.fit_predict(X)
 
 # Flip labels if needed (ensure red = 1)
-if np.mean(X[gmm_labels == 0]) > np.mean(X[gmm_labels == 1]):
-    gmm_labels = 1 - gmm_labels
+gmm_labels = minority_is_one(gmm_labels)
 
 gmm_f1 = f1_score(true_labels, gmm_labels)
 print(f"\nF1 Score: {gmm_f1:.4f}")
@@ -76,8 +85,7 @@ spectral = SpectralClustering(n_clusters=2, affinity='rbf', gamma=gamma,
 spectral_labels = spectral.fit_predict(X)
 
 # Flip if needed
-if np.mean(X[spectral_labels == 0]) > np.mean(X[spectral_labels == 1]):
-    spectral_labels = 1 - spectral_labels
+spectral_labels = minority_is_one(spectral_labels)
 
 spectral_f1 = f1_score(true_labels, spectral_labels)
 print(f"\nF1 Score: {spectral_f1:.4f}")
@@ -106,8 +114,7 @@ K_embedded = eigenvectors[:, idx]
 kmeans_kernel = KMeans(n_clusters=2, random_state=42, n_init=20)
 kernel_kmeans_labels = kmeans_kernel.fit_predict(K_embedded)
 
-if np.mean(K_embedded[kernel_kmeans_labels == 0]) > np.mean(K_embedded[kernel_kmeans_labels == 1]):
-    kernel_kmeans_labels = 1 - kernel_kmeans_labels
+kernel_kmeans_labels = minority_is_one(kernel_kmeans_labels)
 
 kernel_f1 = f1_score(true_labels, kernel_kmeans_labels)
 print(f"\nF1 Score: {kernel_f1:.4f}")
@@ -130,8 +137,7 @@ iso1 = IsolationForest(contamination=0.5, random_state=42)
 iso1_labels = iso1.fit_predict(X)
 iso1_labels = np.where(iso1_labels == -1, 1, 0)
 
-if np.mean(X[iso1_labels == 0]) > np.mean(X[iso1_labels == 1]):
-    iso1_labels = 1 - iso1_labels
+iso1_labels = minority_is_one(iso1_labels)
 
 iso_f1 = f1_score(true_labels, iso1_labels)
 print(f"\nF1 Score: {iso_f1:.4f}")
@@ -158,8 +164,7 @@ for cov_type in ['full', 'tied', 'diag', 'spherical']:
     labels = model.fit_predict(X)
     
     # Flip if needed
-    if np.mean(X[labels == 0]) > np.mean(X[labels == 1]):
-        labels = 1 - labels
+    labels = minority_is_one(labels)
     
     f1 = f1_score(true_labels, labels)
     print(f"Covariance type: {cov_type:12s} → F1: {f1:.4f}")
@@ -191,7 +196,8 @@ kde = KernelDensity(kernel='gaussian', bandwidth='scott')
 
 # Use GMM soft probabilities as density-weighted assignment
 soft_proba = best_model.predict_proba(X)
-density_labels = (soft_proba[:, 1] > 0.5).astype(int)
+red_comp = int(np.argmin(best_model.weights_))  # minority component = red; component order is arbitrary
+density_labels = (soft_proba[:, red_comp] > 0.5).astype(int)
 
 density_f1 = f1_score(true_labels, density_labels)
 print(f"\nF1 Score (hard threshold): {density_f1:.4f}")
@@ -202,7 +208,7 @@ print(f"Recall: {recall_score(true_labels, density_labels):.4f}")
 from scipy.optimize import minimize_scalar
 
 def threshold_f1(threshold):
-    labels = (soft_proba[:, 1] > threshold).astype(int)
+    labels = (soft_proba[:, red_comp] > threshold).astype(int)
     if len(np.unique(labels)) < 2:
         return 0
     return -f1_score(true_labels, labels)
@@ -210,7 +216,7 @@ def threshold_f1(threshold):
 result = minimize_scalar(threshold_f1, bounds=(0.1, 0.9), method='bounded')
 optimal_threshold = result.x
 
-density_labels_opt = (soft_proba[:, 1] > optimal_threshold).astype(int)
+density_labels_opt = (soft_proba[:, red_comp] > optimal_threshold).astype(int)
 density_f1_opt = f1_score(true_labels, density_labels_opt)
 
 print(f"\nF1 Score (optimal threshold={optimal_threshold:.3f}): {density_f1_opt:.4f}")

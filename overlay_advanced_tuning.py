@@ -1,6 +1,7 @@
 # Advanced Hyperparameter Optimization for Overlay Clustering
 # Comprehensive tuning and diagnostic tools
 
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,9 +13,18 @@ from sklearn.neighbors import LocalOutlierFactor
 from scipy.optimize import minimize_scalar
 import warnings
 warnings.filterwarnings('ignore')
+np.random.seed(42)  # reproducible bootstrap / random choices
 
-# Load data
-df = pd.read_csv('df_red_green_overlay.csv')
+
+def minority_is_one(labels):
+    """Label-free, stable orientation: call the smaller cluster 1 (red is the minority class)."""
+    labels = np.asarray(labels).astype(int)
+    return 1 - labels if labels.sum() > len(labels) / 2 else labels
+
+# Load data (Gaussian red / uniform green; set OVERLAY_DATA=df_red_green_overlay.csv for the original)
+DATA_FILE = os.environ.get('OVERLAY_DATA', 'df_red_green_distinct.csv')
+df = pd.read_csv(DATA_FILE)
+print("Data file:", DATA_FILE)
 X = df[['X', 'Y']].values
 true_labels = (df['Color'].str.contains('red')).astype(int)
 
@@ -64,14 +74,15 @@ print("-" * 70)
 gamma_values = np.logspace(-2, 2, 20)
 f1_scores_spectral = []
 
+# gamma in [0.01, 100] is only meaningful on standardised coordinates: on raw pixels
+# exp(-gamma * d^2) underflows to 0, the affinity graph disconnects and ARPACK stalls.
+from sklearn.preprocessing import StandardScaler
+X_std = StandardScaler().fit_transform(X)
+
 for gamma in gamma_values:
-    sc = SpectralClustering(n_clusters=2, affinity='rbf', gamma=gamma, 
-                            random_state=42, eigen_solver='arpack')
-    labels = sc.fit_predict(X)
-    
-    # Try both orientations
-    if np.mean(X[labels == 0]) > np.mean(X[labels == 1]):
-        labels = 1 - labels
+    sc = SpectralClustering(n_clusters=2, affinity='rbf', gamma=gamma,
+                            random_state=42, assign_labels='cluster_qr')
+    labels = minority_is_one(sc.fit_predict(X_std))
     
     f1 = f1_score(true_labels, labels)
     f1_scores_spectral.append(f1)
@@ -104,6 +115,7 @@ print("-" * 70)
 
 # LOF detects local density inconsistencies
 lof = LocalOutlierFactor(n_neighbors=20, novelty=False)
+lof.fit(X)
 lof_scores = lof.negative_outlier_factor_
 
 # Points with extreme LOF scores are at cluster boundaries
@@ -112,13 +124,15 @@ normalized_lof = (lof_scores - lof_scores.min()) / (lof_scores.max() - lof_score
 
 # Get GMM probabilities
 gmm = GaussianMixture(n_components=2, covariance_type='full', random_state=42, n_init=20)
-gmm_proba = gmm.fit_predict_proba(X)
+gmm_proba = gmm.fit(X).predict_proba(X)
 
 # Weight soft probabilities by LOF density confidence
-weighted_proba = gmm_proba[:, 1] * normalized_lof
-gmm_labels = gmm.fit_predict(X)
-if np.mean(X[gmm_labels == 0]) > np.mean(X[gmm_labels == 1]):
-    gmm_labels = 1 - gmm_labels
+# (use the minority component as "red": GMM component order is arbitrary)
+red_comp = int(np.argmin(gmm.weights_))
+weighted_proba = gmm_proba[:, red_comp] * normalized_lof
+gmm_labels = minority_is_one(gmm.predict(X))
+gmm_f1 = f1_score(true_labels, gmm_labels)
+print(f"GMM (full covariance) F1 Score: {gmm_f1:.4f}")
 
 # Find optimal threshold on weighted probabilities
 def weighted_f1(threshold):
@@ -182,7 +196,7 @@ for metric_name, metric_func in metrics.items():
     D = metric_func(X)
     # Convert distance to similarity
     sigma = np.median(D[D > 0])
-    affinity = np.exp(-D / (2 * sigma ** 2))
+    affinity = np.exp(-D ** 2 / (2 * sigma ** 2))  # Gaussian kernel needs squared distances
     
     # Spectral clustering on custom affinity
     from sklearn.cluster import SpectralClustering
@@ -193,10 +207,7 @@ for metric_name, metric_func in metrics.items():
     
     from sklearn.cluster import KMeans
     kmeans = KMeans(n_clusters=2, random_state=42, n_init=20)
-    labels = kmeans.fit_predict(embedding)
-    
-    if np.mean(X[labels == 0]) > np.mean(X[labels == 1]):
-        labels = 1 - labels
+    labels = minority_is_one(kmeans.fit_predict(embedding))
     
     f1 = f1_score(true_labels, labels)
     best_results[metric_name] = f1
@@ -252,12 +263,12 @@ for i in range(n_bootstrap):
     model = GaussianMixture(n_components=2, covariance_type='full', random_state=42, n_init=10)
     labels = model.fit_predict(X_boot)
     
-    # Build co-occurrence matrix
-    for j1 in range(len(idx)):
-        for j2 in range(j1, len(idx)):
-            if labels[j1] == labels[j2]:
-                consensus_matrix[idx[j1], idx[j2]] += 1
-                consensus_matrix[idx[j2], idx[j1]] += 1
+    # Build co-occurrence matrix (vectorized; same counts as the former j1 <= j2 double loop,
+    # which added each off-diagonal pair in both directions and each diagonal pair twice)
+    same = (labels[:, None] == labels[None, :]).ravel()
+    flat = (idx[:, None] * len(X) + idx[None, :]).ravel()
+    consensus_matrix += np.bincount(flat[same], minlength=len(X) ** 2).reshape(len(X), len(X))
+    np.add.at(consensus_matrix, (idx, idx), 1)
 
 consensus_matrix /= n_bootstrap
 consensus_stability = np.mean(np.abs(np.diag(consensus_matrix) - 0.5))
@@ -292,10 +303,7 @@ X_augmented = np.column_stack([
 
 print("Augmented features: X, Y, mean_distance, distance_variance")
 gmm_aug = GaussianMixture(n_components=2, covariance_type='full', random_state=42, n_init=20)
-labels_aug = gmm_aug.fit_predict(X_augmented)
-
-if np.mean(X[labels_aug == 0]) > np.mean(X[labels_aug == 1]):
-    labels_aug = 1 - labels_aug
+labels_aug = minority_is_one(gmm_aug.fit_predict(X_augmented))
 
 f1_aug = f1_score(true_labels, labels_aug)
 print(f"F1 Score with augmented features: {f1_aug:.4f}\n")
@@ -308,7 +316,7 @@ print("SUMMARY: BEST TECHNIQUES FOR OVERLAY PROBLEMS")
 print("="*70)
 
 summary_methods = {
-    'GMM (Full Covariance)': 0.0,
+    'GMM (Full Covariance)': gmm_f1,
     'Spectral Clustering (Optimized Gamma)': best_f1_spectral,
     'LOF + GMM': lof_f1,
     'Augmented Features + GMM': f1_aug,

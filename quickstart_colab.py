@@ -22,7 +22,9 @@ warnings.filterwarnings('ignore')
 # ============================================================================
 
 # Option A: From your CSV file
-df = pd.read_csv('df_red_green_overlay.csv')
+# (Gaussian red / uniform green; use 'df_red_green_overlay.csv' for the original dataset)
+DATA_FILE = 'df_red_green_distinct.csv'
+df = pd.read_csv(DATA_FILE)
 X = df[['X', 'Y']].values
 true_labels = (df['Color'].str.contains('red')).astype(int)
 
