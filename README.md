@@ -97,7 +97,7 @@ The lab and the designer are synchronised:
 |---|---|
 | Reference | Bayes optimum, which knows the true generator: a theoretical limit, not a real method |
 | Classifiers | polynomial logistic regression (sliders for degree and C), QDA, k-NN classifier |
-| Graph learning | label propagation, SGC (simplified graph convolutional network) |
+| Graph learning | label propagation, SGC (simplified graph convolutional network), **hyperbolic GCN** (Poincaré ball, trained in a background worker) |
 | Clustering + labels | t-SNE + DBSCAN, where the true colours pick the red cluster |
 
 "Uses labels" means the method saw the true colours, whether to train, to choose a cluster, or to know the generator. Its score is therefore not comparable with the unsupervised methods. The graph methods are adapted from [ML-MachineLearning-Graphs](https://github.com/D2718281828nis/ML-MachineLearning-Graphs), without that repository's "type-based edges": they connect points of the same Type, which is the colour, so they leak the answer.
@@ -179,6 +179,7 @@ Illustrated step by step, with seven figures: **[illustrations/README.md](illust
 | `overlay_advanced_tuning.py` | GMM BIC/AIC, spectral gamma search, LOF weighting, multi-metric spectral clustering, bootstrap consensus. Runs in about 8 s. |
 | `quickstart_colab.py` | Copy-paste Colab template: GMM + threshold search. The threshold is tuned on true labels, so it is supervised. |
 | `make_distinct_dataset.py` | Generator for datasets with chosen red and green distributions |
+| `hyperbolic_gcn.py` | NumPy hyperbolic GCN (`HyperbolicGCN` from ML-MachineLearning-Graphs, Poincaré ball), used as method 9g of `overlay_clustering_advanced.py` |
 | `illustrations/` | Seven figures and an EN/RU explanation of why the graph method wins on the chain datasets (`make_illustrations.py` regenerates them) |
 | `df_red_green_overlay.csv`, `df_red_green_distinct.csv`, `df_red_green_chains.csv`, `df_red_green_circles.csv` | Datasets |
 
@@ -213,6 +214,7 @@ How the project got here, step by step. All numbers are F1 for the red class.
 | 11 | Why graphs ≈ k-NN on these datasets | Edges mix the colours (only 60% / 32% of a red node's edges lead to red), so propagation averages red with green. SGC without the graph: 0.744; with 4 hops: 0.648. |
 | 12 | An example where graphs win: chains (random walks) | Connected components 1.000; every other unsupervised method ≤ 0.25; supervised k-NN 0.83. |
 | 13 | The same with circles | Connected components 1.000 on every seed, but small circles leak a local signal: k-NN sparsity 0.47–0.81, supervised k-NN ≈ 1.0. |
+| 14 | Hyperbolic GCN from ML-MachineLearning-Graphs (`HyperbolicGCN`: Poincaré-ball lift, tangent-space GCN) | The repository's notebook ran it on the original data without class weights and found no red point (recall 0). With a class-balanced loss and 5-fold CV: original 0.40, ring 0.68–0.76 (depends on curvature c), walk chains 0.75. In this architecture logmap0(expmap0(v)) = v except where the ball's edge clips v, so the curvature only bounds the hidden-vector length (c → 0 is a plain GCN). |
 
 ### Lessons
 
@@ -315,7 +317,7 @@ python make_distinct_dataset.py --help        # все параметры
 |---|---|
 | Эталон | байесовский оптимум, знающий истинный генератор: теоретический предел, а не реальный метод |
 | Классификаторы | полиномиальная логистическая регрессия (ползунки степени и C), QDA, классификатор k-NN |
-| Обучение на графе | распространение меток, SGC (упрощённая графовая свёрточная сеть) |
+| Обучение на графе | распространение меток, SGC (упрощённая графовая свёрточная сеть), **гиперболическая GCN** (шар Пуанкаре, обучается в фоновом потоке) |
 | Кластеризация + метки | t-SNE + DBSCAN, где красный кластер выбирают истинные цвета |
 
 «Использует метки» означает, что метод видел истинные цвета: при обучении, при выборе кластера или как знание генератора. Поэтому его результат нельзя напрямую сравнивать с методами без учителя. Методы на графах адаптированы из [ML-MachineLearning-Graphs](https://github.com/D2718281828nis/ML-MachineLearning-Graphs), но без его «рёбер по Type»: они соединяют точки одного Type, а Type — это цвет, то есть такие рёбра выдают ответ.
@@ -397,6 +399,7 @@ python make_distinct_dataset.py --help        # все параметры
 | `overlay_advanced_tuning.py` | BIC/AIC для GMM, подбор gamma для спектральной кластеризации, веса LOF, спектральная кластеризация с разными метриками, бутстреп-консенсус. Работает около 8 с. |
 | `quickstart_colab.py` | Шаблон для Colab: GMM + подбор порога. Порог подбирается по истинным меткам, то есть это уже обучение с учителем. |
 | `make_distinct_dataset.py` | Генератор датасетов с выбранными распределениями красных и зелёных |
+| `hyperbolic_gcn.py` | Гиперболическая GCN на NumPy (`HyperbolicGCN` из ML-MachineLearning-Graphs, шар Пуанкаре), метод 9g в `overlay_clustering_advanced.py` |
 | `illustrations/` | Семь рисунков и объяснение на EN/RU, почему метод на графе побеждает на датасетах с цепочками (`make_illustrations.py` пересоздаёт их) |
 | `df_red_green_overlay.csv`, `df_red_green_distinct.csv`, `df_red_green_chains.csv`, `df_red_green_circles.csv` | Датасеты |
 
@@ -431,6 +434,7 @@ OVERLAY_DATA=my_data.csv python overlay_advanced_tuning.py
 | 11 | Почему здесь графы ≈ k-NN | Рёбра смешивают цвета (лишь 60% / 32% рёбер красной точки ведут к красной), поэтому распространение усредняет красное с зелёным. SGC без графа: 0,744; с 4 шагами: 0,648. |
 | 12 | Пример, где побеждают графы: цепочки (случайные блуждания) | Компоненты связности 1,000; все остальные методы без учителя ≤ 0,25; k-NN с учителем 0,83. |
 | 13 | То же с окружностями | Компоненты связности 1,000 на всех зёрнах, но маленькие окружности дают локальный сигнал: разреженность k-NN 0,47–0,81, k-NN с учителем ≈ 1,0. |
+| 14 | Гиперболическая GCN из ML-MachineLearning-Graphs (`HyperbolicGCN`: подъём в шар Пуанкаре, GCN в касательном пространстве) | Ноутбук того репозитория запускал её на исходных данных без весов классов и не нашёл ни одной красной точки (полнота 0). Со сбалансированной функцией потерь и 5-кратной CV: исходный датасет 0,40, кольцо 0,68–0,76 (зависит от кривизны c), цепочки-блуждания 0,75. В этой архитектуре logmap0(expmap0(v)) = v везде, кроме мест, где край шара обрезает v, поэтому кривизна лишь ограничивает длину скрытых векторов (c → 0 — обычная GCN). |
 
 ### Уроки
 

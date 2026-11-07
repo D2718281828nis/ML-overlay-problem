@@ -394,6 +394,7 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
 <script>
 /* ======================= i18n ======================= */
 const I18N={en:{
+mn_hgcn:"Graph: hyperbolic GCN (Poincaré ball)",ms_hgcn:"GCN that lifts node features into the Poincaré ball (curvature −c); from ML-MachineLearning-Graphs. 5-fold CV.",p_logc_h:"log₁₀ c (Poincaré ball curvature −c)",note_hgcn:"c = {c} · {clip} of hidden vectors clipped at the ball's edge · 2 layers, 16 hidden units, 300 epochs, class-balanced loss, 5-fold CV",hgcn_wait:"hyperbolic GCN: training fold {f} / 5 in your browser…",calc_hgcn:"hyperbolic GCN trained ({ms} ms)",md_hgcn:"<b>Supervised hyperbolic graph neural network:</b> the <code>HyperbolicGCN</code> model from <i>ML-MachineLearning-Graphs</i> (healthcare_gnn/models/gnn.py) with its Poincaré-ball operations (models/hyperbolic.py). Node features (X, Y, their squares and product, and the log k-NN distance) are mapped linearly and lifted into the Poincaré ball of curvature −c (expmap0). A GCN layer aggregates them over the k-NN graph in the tangent space (logmap0), the result is lifted into the ball again, and a linear layer reads it out. Training: class-balanced loss and Adam, run in a background worker; scoring: 5-fold CV. The repository's notebook ran this kind of model on the original data <i>without</i> class weights and predicted no red point at all (recall 0); with balancing it gets ≈ 0.40. <b>Honest note:</b> logmap0(expmap0(v)) = v except where the ball's edge clips the vector, so here the curvature acts as a bound on the length of hidden vectors. c → 0 is a plain GCN (≈ 0.68 on the ring), c ≈ 10 helps a little (≈ 0.76), and a very large c hurts.",
 calc_title:"Calculations",calc_idle:"idle",calc_gen:"data generated: {n} points ({ms} ms)",calc_build:"neighbours + footprint: {n} points ({ms} ms)",calc_run:"{m} on “{ds}”: {ms} ms",calc_tsne:"t-SNE map ready ({ms} ms)",
 des_shape:"Chain shape",d_walk:"Walk",d_circle:"Circle",des_preset2:"Graph example: circles",dd_red_circles:"{c} large red circles",dd_green_circles:"small green circles (12–20 points)",des_circle_h:"Circles: every chain is a closed circle (12 px step, ≥ 30 px apart). Red circles are large (~38 points), green ones small (12–20). The graph still gets F1 ≈ 1.0, at k = 2 and k = 3, but small circles are compact, so local methods such as k-NN sparsity also pick up a signal (≈ 0.5–0.8). The walk shape is the stricter test.",
 mn_gcomp:"Graph: connected components",ms_gcomp:"Size of the point's connected chain in the k-NN graph. Wins when the class is defined by connectivity.",note_gcomp:"{nc} connected components · largest: {big} points",md_gcomp:"<b>Unsupervised graph method.</b> Build the k-NN graph with a small k and find its connected components (breadth-first search). Each point is scored by the size of its component, and the largest components are called red. This sees a <i>global</i> property — how far a point's chain continues — that no local statistic can see. On the chains example (red = 6 long chains, green ≈ 95 short chains, the same density and the same local shape) it reaches F1 ≈ 1.0, while density, clustering and t-SNE stay at or below the baseline. k matters: a chain point has 2 neighbours, so k = 2 keeps chains apart; with k ≥ 3 edges jump between chains and the components merge.",d_chains_g:"Short chains",d_chains_r:"Long chains",des_rc:"Number of red chains",des_preset:"Graph example: chains",dd_red_chains:"{c} long red chains",dd_green_chains:"short green chains (12–20 points)",des_chain_h:"Chains: every point lies on a chain with a 12 px step, and chains stay at least 30 px apart. Red chains are long, green ones short, so the colours differ only in connectivity, not in density or position. Try “Graph: connected components” (k = 2).",
@@ -520,6 +521,7 @@ take_list:"<li><b>Always report the trivial baseline.</b> On the original data �
 footer:"ML-overlay-problem · <a href=\"https://github.com/D2718281828nis/ML-overlay-problem\">GitHub</a> · <a href=\"https://colab.research.google.com/github/D2718281828nis/ML-overlay-problem/blob/main/case_study-unsupervised-overlay-problem.ipynb\">Open notebook in Colab</a> · All computations on this page run client-side on the embedded CSVs."
 },
 ru:{
+mn_hgcn:"Граф: гиперболическая GCN (шар Пуанкаре)",ms_hgcn:"GCN, поднимающая признаки узлов в шар Пуанкаре (кривизна −c); из ML-MachineLearning-Graphs. 5-кратная CV.",p_logc_h:"log₁₀ c (кривизна шара Пуанкаре −c)",note_hgcn:"c = {c} · {clip} скрытых векторов обрезано краем шара · 2 слоя, 16 скрытых нейронов, 300 эпох, сбалансированная функция потерь, 5-кратная CV",hgcn_wait:"гиперболическая GCN: обучение фолда {f} / 5 в браузере…",calc_hgcn:"гиперболическая GCN обучена ({ms} мс)",md_hgcn:"<b>Гиперболическая графовая нейросеть с учителем:</b> модель <code>HyperbolicGCN</code> из <i>ML-MachineLearning-Graphs</i> (healthcare_gnn/models/gnn.py) с её операциями в шаре Пуанкаре (models/hyperbolic.py). Признаки узлов (X, Y, их квадраты и произведение, логарифм расстояния k-NN) линейно отображаются и поднимаются в шар Пуанкаре кривизны −c (expmap0). Слой GCN агрегирует их по графу k-NN в касательном пространстве (logmap0), результат снова поднимается в шар, и линейный слой выдаёт ответ. Обучение: сбалансированная по классам функция потерь и Adam в фоновом потоке; оценка: 5-кратная CV. Ноутбук того репозитория запускал такую модель на исходных данных <i>без</i> весов классов и не предсказал ни одной красной точки (полнота 0); с балансировкой получается ≈ 0,40. <b>Честно:</b> logmap0(expmap0(v)) = v везде, кроме мест, где край шара обрезает вектор, поэтому кривизна здесь работает как ограничение длины скрытых векторов. c → 0 — обычная GCN (≈ 0,68 на кольце), c ≈ 10 немного помогает (≈ 0,76), очень большое c вредит.",
 calc_title:"Вычисления",calc_idle:"ожидание",calc_gen:"данные созданы: {n} точек ({ms} мс)",calc_build:"соседи + область: {n} точек ({ms} мс)",calc_run:"{m} на «{ds}»: {ms} мс",calc_tsne:"карта t-SNE готова ({ms} мс)",
 des_shape:"Форма цепочек",d_walk:"Блуждание",d_circle:"Окружность",des_preset2:"Пример для графа: окружности",dd_red_circles:"{c} больших красных окружностей",dd_green_circles:"маленькие зелёные окружности (12–20 точек)",des_circle_h:"Окружности: каждая цепочка — замкнутая окружность (шаг 12 px, не ближе 30 px друг к другу). Красные окружности большие (~38 точек), зелёные маленькие (12–20). Граф по-прежнему даёт F1 ≈ 1,0 при k = 2 и k = 3, но маленькие окружности компактны, поэтому локальные методы вроде разреженности k-NN тоже находят сигнал (≈ 0,5–0,8). Форма «блуждание» — более строгий тест.",
 mn_gcomp:"Граф: компоненты связности",ms_gcomp:"Размер связной цепочки точки в графе k-NN. Побеждает, когда класс задан связностью.",note_gcomp:"{nc} компонент связности · самая большая: {big} точек",md_gcomp:"<b>Метод на графе без учителя.</b> Строим граф k-NN с малым k и находим его компоненты связности (обход в ширину). Каждая точка оценивается размером своей компоненты, самые большие компоненты считаются красными. Метод видит <i>глобальное</i> свойство — как далеко продолжается цепочка точки, — которое не видит ни одна локальная статистика. На примере с цепочками (красные — 6 длинных цепочек, зелёные — около 95 коротких, одинаковая плотность и одинаковая локальная форма) он даёт F1 ≈ 1,0, тогда как плотность, кластеризация и t-SNE остаются на базовом уровне или ниже. Важно k: у точки цепочки 2 соседа, поэтому k = 2 не соединяет цепочки между собой; при k ≥ 3 рёбра перескакивают между цепочками и компоненты сливаются.",d_chains_g:"Короткие цепочки",d_chains_r:"Длинные цепочки",des_rc:"Число красных цепочек",des_preset:"Пример для графа: цепочки",dd_red_chains:"{c} длинных красных цепочек",dd_green_chains:"короткие зелёные цепочки (12–20 точек)",des_chain_h:"Цепочки: каждая точка лежит на цепочке с шагом 12 px, а цепочки держатся не ближе 30 px друг от друга. Красные цепочки длинные, зелёные короткие, поэтому цвета отличаются только связностью, а не плотностью или положением. Попробуйте «Граф: компоненты связности» (k = 2).",
@@ -948,6 +950,54 @@ function qdaCV(){const fold=folds5(),out=new Float64Array(N);
     for(let i=0;i<N;i++)if(fold[i]===k){const l1=lp(1,i),l0=lp(0,i),m=Math.max(l0,l1);out[i]=Math.exp(l1-m)/(Math.exp(l0-m)+Math.exp(l1-m))}}
   return out}
 
+
+/* ---- hyperbolic GCN (HyperbolicGCN from ML-MachineLearning-Graphs), trained in a Web Worker ---- */
+function hgcnWorker(){
+  self.onmessage=function(e){const{X,d,ptr,col,w,selfw,y,fold,c,H,E,lr}=e.data,N=y.length,rc=Math.sqrt(c),MAXN=(1-1e-5)/rc;
+    let seed=7;const R=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+    const nrm=()=>{let u=0;while(!u)u=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*R())};
+    const S=M=>{const O=new Float64Array(N*H);for(let i=0;i<N;i++){const a=i*H,s=selfw[i];for(let h=0;h<H;h++)O[a+h]=M[a+h]*s;for(let q=ptr[i];q<ptr[i+1];q++){const b=col[q]*H,wq=w[q];for(let h=0;h<H;h++)O[a+h]+=M[b+h]*wq}}return O};
+    // logmap0(expmap0(v)) row by row, with the projections of models/hyperbolic.py
+    const lift=V=>{const O=new Float64Array(N*H);for(let i=0;i<N;i++){const a=i*H;let n=0;for(let h=0;h<H;h++)n+=V[a+h]*V[a+h];n=Math.sqrt(n);const nn=Math.max(n,1e-7);
+        let f=Math.tanh(rc*nn)/(rc*nn),en=f*n;if(en>MAXN){f*=MAXN/Math.max(en,1e-5);en=MAXN}const xn=Math.max(en,1e-7),g=Math.atanh(Math.min(rc*xn,1-1e-7))/(rc*xn)*f;for(let h=0;h<H;h++)O[a+h]=V[a+h]*g}return O};
+    const liftGrad=(V,L,G)=>{const O=Float64Array.from(G);for(let i=0;i<N;i++){const a=i*H;let n=0,m=0;for(let h=0;h<H;h++){n+=V[a+h]*V[a+h];m+=L[a+h]*L[a+h]}n=Math.sqrt(n);m=Math.sqrt(m);
+        if(n>m*(1+1e-9)){let gu=0;for(let h=0;h<H;h++)gu+=G[a+h]*V[a+h]/n;const s=m/n;for(let h=0;h<H;h++)O[a+h]=s*(G[a+h]-V[a+h]/n*gu)}}return O};
+    const out=new Float64Array(N);let clipped=0,rows=0;
+    for(let f=0;f<5;f++){
+      const tr=[];for(let i=0;i<N;i++)if(fold[i]!==f)tr.push(i);let n1=0;for(const i of tr)n1+=y[i];const w1=tr.length/(2*n1),w0=tr.length/(2*(tr.length-n1));
+      const P={W1:Float64Array.from({length:d*H},()=>nrm()/Math.sqrt(d)),b1:new Float64Array(H),W2:Float64Array.from({length:H*H},()=>nrm()/Math.sqrt(H)),b2:new Float64Array(H),w3:Float64Array.from({length:H},()=>nrm()/Math.sqrt(H)),b3:new Float64Array(1)};
+      const M1={},M2={};for(const k in P){M1[k]=new Float64Array(P[k].length);M2[k]=new Float64Array(P[k].length)}
+      const fwd=()=>{const T=new Float64Array(N*H);for(let i=0;i<N;i++)for(let h=0;h<H;h++){let s=P.b1[h];for(let j=0;j<d;j++)s+=X[i*d+j]*P.W1[j*H+h];T[i*H+h]=s}
+        const L1=lift(T),SL1=S(L1),A=new Float64Array(N*H);for(let i=0;i<N;i++)for(let h=0;h<H;h++){let s=P.b2[h];for(let j=0;j<H;j++)s+=SL1[i*H+j]*P.W2[j*H+h];A[i*H+h]=s}
+        const Rl=A.map(v=>v>0?v:0),L2=lift(Rl),z=new Float64Array(N);for(let i=0;i<N;i++){let s=P.b3[0];for(let h=0;h<H;h++)s+=L2[i*H+h]*P.w3[h];z[i]=s}return{T,L1,SL1,A,Rl,L2,z}};
+      for(let ep=1;ep<=E;ep++){const F=fwd(),dz=new Float64Array(N);let sw=0;for(const i of tr)sw+=y[i]?w1:w0;
+        for(const i of tr){const p=1/(1+Math.exp(-F.z[i]));dz[i]=(y[i]?w1:w0)*(p-y[i])/sw}
+        const g={W1:new Float64Array(d*H),b1:new Float64Array(H),W2:new Float64Array(H*H),b2:new Float64Array(H),w3:new Float64Array(H),b3:new Float64Array(1)};
+        const dL2=new Float64Array(N*H);for(let i=0;i<N;i++){if(!dz[i])continue;g.b3[0]+=dz[i];for(let h=0;h<H;h++){g.w3[h]+=F.L2[i*H+h]*dz[i];dL2[i*H+h]=dz[i]*P.w3[h]}}
+        const dR=liftGrad(F.Rl,F.L2,dL2),dA=dR.map((v,q)=>F.A[q]>0?v:0),dSL1=new Float64Array(N*H);
+        for(let i=0;i<N;i++)for(let h=0;h<H;h++){const v=dA[i*H+h];if(!v)continue;g.b2[h]+=v;for(let j=0;j<H;j++){g.W2[j*H+h]+=F.SL1[i*H+j]*v;dSL1[i*H+j]+=v*P.W2[j*H+h]}}
+        const dT=liftGrad(F.T,F.L1,S(dSL1));for(let i=0;i<N;i++)for(let h=0;h<H;h++){const v=dT[i*H+h];if(!v)continue;g.b1[h]+=v;for(let j=0;j<d;j++)g.W1[j*H+h]+=X[i*d+j]*v}
+        for(const k in P){const p_=P[k],m1=M1[k],m2=M2[k],gk=g[k];for(let q=0;q<p_.length;q++){m1[q]=.9*m1[q]+.1*gk[q];m2[q]=.999*m2[q]+.001*gk[q]*gk[q];p_[q]-=lr*(m1[q]/(1-.9**ep))/(Math.sqrt(m2[q]/(1-.999**ep))+1e-8)}}}
+      const F=fwd();for(let i=0;i<N;i++)if(fold[i]===f){out[i]=F.z[i];let n=0,m=0;for(let h=0;h<H;h++){n+=F.Rl[i*H+h]**2;m+=F.L2[i*H+h]**2}rows++;if(Math.sqrt(n)>Math.sqrt(m)*(1+1e-6))clipped++}
+      self.postMessage({fold:f+1})}
+    self.postMessage({done:true,out,clip:clipped/rows})}}
+function hgcnInputs(k){const nb=knnGraph(k),deg=Float64Array.from(nb,s=>s.length+1),ptr=new Int32Array(N+1);for(let i=0;i<N;i++)ptr[i+1]=ptr[i]+nb[i].length;
+  const col=new Int32Array(ptr[N]),w=new Float64Array(ptr[N]),selfw=Float64Array.from(deg,v=>1/v);for(let i=0;i<N;i++){let q=ptr[i];for(const j of nb[i]){col[q]=j;w[q]=1/Math.sqrt(deg[i]*deg[j]);q++}}
+  const cols=[ZX,ZY,ZX.map(v=>v*v),ZX.map((v,i)=>v*ZY[i]),ZY.map(v=>v*v),Float64Array.from({length:N},(_,i)=>Math.log(dk(i,10)))].map(f=>{const m=mean(f),s=std(f)||1;return f.map(v=>(v-m)/s)});
+  const d=cols.length,X=new Float64Array(N*d);for(let i=0;i<N;i++)for(let j=0;j<d;j++)X[i*d+j]=cols[j][i];return{X,d,ptr,col,w,selfw,y:Float64Array.from(Y),fold:folds5()}}
+let hgLive=null;
+function hgcnJob(k,logc,start=true){const D=buildDataset(DS),key=k+"|"+logc;D.hg=D.hg||{};D.hgP=D.hgP||{};if(D.hg[key])return D.hg[key];if(!start||D.hgP[key])return null;
+  const inp=hgcnInputs(k),msg={...inp,c:10**logc,H:16,E:300,lr:.02},t0=performance.now();
+  D.hgP[key]=new Promise(res=>{const onMsg=m=>{if(m.done){D.hg[key]={score:m.out,clip:m.clip};hgLive=null;const nm=dsName(D);if(nm)for(const c2 in cache)if(c2.startsWith(nm+"hgcn"))delete cache[c2];
+        if(typeof calc!=="undefined")calc.log(T("calc_hgcn",{ms:Math.round(performance.now()-t0)}));onHgDone(D);res()}else{hgLive=m.fold;if(D===buildDataset(DS)&&state.res&&state.res.wait==="hgcn"){busyText(hgStatus());if(typeof calc!=="undefined")calc.status(hgStatus(),m.fold/5)}}};
+    try{const wk=new Worker(URL.createObjectURL(new Blob(["("+hgcnWorker.toString()+")()"],{type:"text/javascript"})));(D.workers=D.workers||[]).push(wk);wk.onmessage=e=>{onMsg(e.data);if(e.data.done)wk.terminate()};wk.onerror=()=>{wk.terminate();inline()};wk.postMessage(msg)}catch(e){inline()}
+    function inline(){setTimeout(()=>{const fake={postMessage:onMsg};new Function("self","("+hgcnWorker.toString()+")();self.onmessage({data:arguments[1]})")(fake,msg)},30)}});
+  return null}
+const hgStatus=()=>T("hgcn_wait",{f:Math.min(5,(hgLive||0)+1)});
+function onHgDone(D){const nm=dsName(D);if(!nm)return;
+  if(CMP&&CMP[nm]&&nm!=="custom"){const cur=DS;useDataset(nm);CMP[nm].hgcn=defaultF1("hgcn");useDataset(cur);compareTable()}
+  if(D===buildDataset(DS)){busy(false);renderMethods();update()}}
+
 /* ======================= method registry ======================= */
 const METHODS=[
  {id:"base",grp:"g_ref",type:"hard",params:[],run:()=>({pred:new Uint8Array(N).fill(1)})},
@@ -977,10 +1027,12 @@ const METHODS=[
  {id:"gcomp",grp:"g_graph",type:"score",params:[{k:"k",l:"k",min:1,max:10,v:2}],run:p=>{const r=graphComponents(p.k);return{score:r.score,edges:p.k,noteK:"note_gcomp",noteV:{nc:r.nc,big:r.big}}}},
  {id:"gspec",grp:"g_graph",type:"hard",params:[{k:"k",l:"k",min:3,max:30,v:10}],run:p=>({...graphSpectral(p.k),edges:p.k})},
  {id:"glp",grp:"g_gnn",type:"score",sup:true,params:[{k:"k",l:"k",min:3,max:30,v:10},{k:"alpha",l:"p_alpha",min:.5,max:.99,step:.01,v:.9}],run:p=>({score:labelPropCV(p.k,p.alpha),edges:p.k})},
+ {id:"hgcn",grp:"g_gnn",type:"score",sup:true,params:[{k:"k",l:"k",min:3,max:30,v:10},{k:"logc",l:"p_logc_h",min:-2,max:3,step:.5,v:0}],
+  run:p=>{const r=hgcnJob(p.k,p.logc);if(!r)return{pending:true,wait:"hgcn"};return{score:r.score,edges:p.k,noteK:"note_hgcn",noteV:{c:num(10**p.logc,2),clip:pct(r.clip)}}}},
  {id:"sgc",grp:"g_gnn",type:"score",sup:true,params:[{k:"k",l:"k",min:3,max:30,v:10},{k:"K",l:"p_hops",min:0,max:6,v:2},{k:"logC",l:"p_logc",min:-2,max:6,step:.5,v:4}],run:p=>({score:sgcCV(p.k,p.K,p.logC),edges:p.k})}
 ];
 // unsupervised first, then supervised; groups stay contiguous
-const ORDER=["base","km","gmm","ring","gu","fcm","db","kdd","kd","lnnd","lof","tsnek","gcomp","gdens","gspec","bayes","lr","qda","sup","glp","sgc","tsne"];
+const ORDER=["base","km","gmm","ring","gu","fcm","db","kdd","kd","lnnd","lof","tsnek","gcomp","gdens","gspec","bayes","lr","qda","sup","glp","sgc","hgcn","tsne"];
 METHODS.sort((a,b)=>ORDER.indexOf(a.id)-ORDER.indexOf(b.id));
 const caseOf=m=>m.sup?"sup":"unsup";
 function avail(m,ds){if(m.only&&!m.only.includes(ds))return false;if(m.id==="bayes"&&ds==="custom"&&DATASETS.custom&&isChains(DATASETS.custom.params))return false;return true}
@@ -1090,7 +1142,7 @@ function drawCurve(){const box=document.getElementById("curveBox"),r=state.res;b
 /* ======================= lab update ======================= */
 function update(){const m=METHODS.find(x=>x.id===state.m);state.res=runMethod(state.m);busy(false);
   if(state.res.pending){["mF1","mP","mR","mLift"].forEach(id=>document.getElementById(id).textContent="…");document.getElementById("cm").innerHTML="";document.getElementById("curveBox").style.display="none";
-    document.getElementById("mDesc").innerHTML=T("md_"+m.id)+`<br><span class="mono">${tsneStatus()}</span>`;busyText(tsneStatus());drawScatter();renderDesTable();return}
+    const ps=state.res.wait==="hgcn"?hgStatus():tsneStatus();document.getElementById("mDesc").innerHTML=T("md_"+m.id)+`<br><span class="mono">${ps}</span>`;busyText(ps);drawScatter();renderDesTable();return}
   const pred=predOf(state.res),c=confusion(pred);
   document.getElementById("mF1").textContent=f3(c.f);document.getElementById("mP").textContent=f3(c.p);document.getElementById("mR").textContent=f3(c.r);
   const rf=randF1(c.q),li=document.getElementById("mLift"),d=c.f-rf;li.textContent=(d>=0?"+":"")+num(d,3);li.className="v lift "+(d>0.01?"up":"dn");
@@ -1268,7 +1320,7 @@ function desRun(skipGen,follow){const tok=++desTok;desT0=performance.now();desB(
     const list=METHODS.filter(m=>avail(m,"custom"));let i=0;
     const step=()=>{if(tok!==desTok)return;if(i>=list.length){desB(T("des_done",{s:num((performance.now()-desT0)/1000,1)}));renderDesTable();if(CMP)compareTable();if(DS==="custom"){results();renderMethods()}return}
       desB(T("des_cls",{i:i+1,n:list.length}));const m=list[i++];const cur=DS;useDataset("custom");const v=defaultF1(m.id);
-      if(!isFinite(v)&&(m.id==="tsne"||m.id==="tsnek")){const P=startEmb(buildDataset("custom"),30);useDataset(cur);desB(T("des_tsne"));i--;P.then(()=>{if(tok===desTok)setTimeout(step,0)});return}
+      if(!isFinite(v)&&(m.id==="tsne"||m.id==="tsnek"||m.id==="hgcn")){const Dc=buildDataset("custom"),P=m.id==="hgcn"?(Dc.hgP&&Dc.hgP["10|0"])||Promise.resolve():startEmb(Dc,30);useDataset(cur);desB(T("des_tsne"));i--;P.then(()=>{if(tok===desTok)setTimeout(step,0)});return}
       DES[m.id]=v;useDataset(cur);renderDesTable();setTimeout(step,0)};
     setTimeout(step,0)},20)}
 function desChanged(now){desUI();makeCustom();desStale=true;drawDes();renderDesTable();clearTimeout(desTimer);if($("autoRun").checked)desTimer=setTimeout(()=>desRun(true,true),now?0:300)}

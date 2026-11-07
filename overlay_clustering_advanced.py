@@ -418,6 +418,15 @@ glp_labels, sgc_labels = flag_top(glp_score, n_flag), flag_top(sgc_score, n_flag
 glp_f1 = report("9c. Graph label spreading (USES LABELS, 5-fold CV)", glp_labels)
 sgc_f1 = report("9d. SGC, simplified GCN (USES LABELS, 5-fold CV)", sgc_labels)
 
+# 9g. supervised hyperbolic GCN (HyperbolicGCN from ML-MachineLearning-Graphs, see hyperbolic_gcn.py):
+# features lifted into the Poincare ball (curvature -c), GCN aggregation in the tangent space,
+# class-balanced loss, 5-fold CV. The repository's notebook trained it WITHOUT class weights on
+# the original data and predicted no red point at all (recall 0).
+from hyperbolic_gcn import hgcn_cv_scores
+hgcn_labels = flag_top(hgcn_cv_scores(X_std, true_labels.values if hasattr(true_labels, 'values') else true_labels,
+                                      k=GRAPH_K, c=1.0), n_flag)
+hgcn_f1 = report("9g. Hyperbolic GCN, Poincare ball c=1 (USES LABELS, 5-fold CV)", hgcn_labels)
+
 # ============================================================================
 # VISUALIZATION
 # ============================================================================
@@ -425,7 +434,7 @@ print("\n" + "="*70)
 print("GENERATING VISUALIZATIONS")
 print("="*70)
 
-fig, axes = plt.subplots(4, 4, figsize=(18, 18))
+fig, axes = plt.subplots(5, 4, figsize=(18, 22))
 fig.suptitle('Overlay Clustering: Different Methods Comparison', fontsize=16, fontweight='bold')
 
 methods = [
@@ -443,6 +452,7 @@ methods = [
     (gcomp_labels, "Graph: connected components", "F1: {:.4f}".format(gcomp_f1)),
     (glp_labels, "Graph: label spreading (labels)", "F1: {:.4f}".format(glp_f1)),
     (sgc_labels, "Graph: SGC (labels)", "F1: {:.4f}".format(sgc_f1)),
+    (hgcn_labels, "Graph: hyperbolic GCN (labels)", "F1: {:.4f}".format(hgcn_f1)),
     (true_labels, "Ground Truth", "Reference")
 ]
 
@@ -517,9 +527,9 @@ results_data = {
                'Isolation Forest', f'GMM ({best_cov})', 'Soft GMM + Threshold', 'Ensemble',
                't-SNE + k-NN density', 't-SNE + DBSCAN (uses labels)',
                'Graph: smoothed density', 'Graph: spectral cut', 'Graph: connected components',
-               'Graph: label spreading (uses labels)', 'Graph: SGC (uses labels)'],
+               'Graph: label spreading (uses labels)', 'Graph: SGC (uses labels)', 'Graph: hyperbolic GCN (uses labels)'],
     'F1 Score': [gmm_f1, spectral_f1, kernel_f1, iso_f1, best_f1, density_f1_opt, ensemble_f1,
-                 tsne_density_f1, tsne_dbscan_f1, gdens_f1, gspec_f1, gcomp_f1, glp_f1, sgc_f1],
+                 tsne_density_f1, tsne_dbscan_f1, gdens_f1, gspec_f1, gcomp_f1, glp_f1, sgc_f1, hgcn_f1],
     'Precision': [
         precision_score(true_labels, gmm_labels),
         precision_score(true_labels, spectral_labels),
@@ -530,7 +540,7 @@ results_data = {
         precision_score(true_labels, ensemble_labels),
         precision_score(true_labels, tsne_density_labels),
         precision_score(true_labels, tsne_dbscan_labels, zero_division=0),
-        *[precision_score(true_labels, l, zero_division=0) for l in (gdens_labels, gspec_labels, gcomp_labels, glp_labels, sgc_labels)]
+        *[precision_score(true_labels, l, zero_division=0) for l in (gdens_labels, gspec_labels, gcomp_labels, glp_labels, sgc_labels, hgcn_labels)]
     ],
     'Recall': [
         recall_score(true_labels, gmm_labels),
@@ -542,7 +552,7 @@ results_data = {
         recall_score(true_labels, ensemble_labels),
         recall_score(true_labels, tsne_density_labels),
         recall_score(true_labels, tsne_dbscan_labels),
-        *[recall_score(true_labels, l) for l in (gdens_labels, gspec_labels, gcomp_labels, glp_labels, sgc_labels)]
+        *[recall_score(true_labels, l) for l in (gdens_labels, gspec_labels, gcomp_labels, glp_labels, sgc_labels, hgcn_labels)]
     ]
 }
 
