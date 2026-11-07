@@ -185,12 +185,16 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
     <div class="card">
       <div class="swnote" id="desSwitchNote"></div>
       <h3 style="color:var(--green)" data-t="des_green"></h3>
-      <div class="seg" id="gDist"><button data-v="uniform" class="on" data-t="d_uniform"></button><button data-v="gaussian" data-t="d_gauss"></button></div>
+      <div class="seg" id="gDist"><button data-v="uniform" class="on" data-t="d_uniform"></button><button data-v="gaussian" data-t="d_gauss"></button><button data-v="chains" data-t="d_chains_g"></button></div>
       <div class="ctl"><label><span data-t="des_n"></span> <b id="v_ng"></b></label><input type="range" id="s_ng" min="200" max="3000" step="25" value="1445"></div>
       <div class="ctl" id="ctl_gs"><label><span data-t="des_gsig"></span> <b id="v_gs"></b></label><input type="range" id="s_gs" min="100" max="900" step="10" value="400"></div>
       <h3 style="color:var(--red);margin-top:18px" data-t="des_red"></h3>
-      <div class="seg" id="rDist"><button data-v="ring" class="on" data-t="d_ring"></button><button data-v="gaussian" data-t="d_gauss"></button><button data-v="uniform" data-t="d_uniform"></button></div>
+      <div class="seg" id="rDist"><button data-v="ring" class="on" data-t="d_ring"></button><button data-v="gaussian" data-t="d_gauss"></button><button data-v="uniform" data-t="d_uniform"></button><button data-v="chains" data-t="d_chains_r"></button></div>
       <div class="ctl"><label><span data-t="des_n"></span> <b id="v_nr"></b></label><input type="range" id="s_nr" min="20" max="800" step="1" value="227"></div>
+      <div class="ctl" id="ctl_rc"><label><span data-t="des_rc"></span> <b id="v_rc"></b></label><input type="range" id="s_rc" min="1" max="12" step="1" value="6"></div>
+      <div class="ctl" id="ctl_shape"><label><span data-t="des_shape"></span></label><div class="seg" id="shapeSeg"><button data-v="walk" class="on" data-t="d_walk"></button><button data-v="circle" data-t="d_circle"></button></div></div>
+      <div class="hint" id="chainHint" style="margin-top:8px" data-t="des_chain_h"></div>
+      <div class="hint" id="circleHint" style="margin-top:8px" data-t="des_circle_h"></div>
       <div class="ctl" id="ctl_R"><label><span data-t="des_R"></span> <b id="v_R"></b></label><input type="range" id="s_R" min="40" max="700" step="5" value="350"></div>
       <div class="ctl" id="ctl_rs"><label><span id="l_rs"></span> <b id="v_rs"></b></label><input type="range" id="s_rs" min="3" max="300" step="1" value="15"></div>
       <div class="ctl" id="ctl_c"><label><span data-t="des_center"></span> <b id="v_c"></b></label><div class="hint" data-t="des_click"></div></div>
@@ -198,7 +202,7 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
       <label class="chk" id="clipLbl"><input type="checkbox" id="clipRed"> <span data-t="des_clip"></span></label>
       <div class="hint" style="margin:4px 0 0 24px" data-t="des_clip_h"></div>
       <label class="chk"><input type="checkbox" id="autoRun" checked> <span data-t="des_auto"></span></label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn primary" id="desRun" data-t="des_run"></button><button class="btn" id="desReset" data-t="des_reset"></button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn primary" id="desRun" data-t="des_run"></button><button class="btn" id="desReset" data-t="des_reset"></button><button class="btn" id="desPreset" data-t="des_preset"></button><button class="btn" id="desPreset2" data-t="des_preset2"></button></div>
     </div>
     <div class="card">
       <div class="toolbar" style="margin-bottom:6px"><b style="font-size:14px" data-t="des_map"></b><span class="busy" id="desBusy"></span></div>
@@ -365,6 +369,8 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
 <script>
 /* ======================= i18n ======================= */
 const I18N={en:{
+des_shape:"Chain shape",d_walk:"Walk",d_circle:"Circle",des_preset2:"Graph example: circles",dd_red_circles:"{c} large red circles",dd_green_circles:"small green circles (12–20 points)",des_circle_h:"Circles: every chain is a closed circle (12 px step, ≥ 30 px apart). Red circles are large (~38 points), green ones small (12–20). The graph still gets F1 ≈ 1.0, at k = 2 and k = 3, but small circles are compact, so local methods such as k-NN sparsity also pick up a signal (≈ 0.5–0.8). The walk shape is the stricter test.",
+mn_gcomp:"Graph: connected components",ms_gcomp:"Size of the point's connected chain in the k-NN graph. Wins when the class is defined by connectivity.",note_gcomp:"{nc} connected components · largest: {big} points",md_gcomp:"<b>Unsupervised graph method.</b> Build the k-NN graph with a small k and find its connected components (breadth-first search). Each point is scored by the size of its component, and the largest components are called red. This sees a <i>global</i> property — how far a point's chain continues — that no local statistic can see. On the chains example (red = 6 long chains, green ≈ 95 short chains, the same density and the same local shape) it reaches F1 ≈ 1.0, while density, clustering and t-SNE stay at or below the baseline. k matters: a chain point has 2 neighbours, so k = 2 keeps chains apart; with k ≥ 3 edges jump between chains and the components merge.",d_chains_g:"Short chains",d_chains_r:"Long chains",des_rc:"Number of red chains",des_preset:"Graph example: chains",dd_red_chains:"{c} long red chains",dd_green_chains:"short green chains (12–20 points)",des_chain_h:"Chains: every point lies on a chain with a 12 px step, and chains stay at least 30 px apart. Red chains are long, green ones short, so the colours differ only in connectivity, not in density or position. Try “Graph: connected components” (k = 2).",
 g_graph:"Graph methods (k-NN graph)",g_gnn:"Graph learning on labelled nodes",p_hops:"propagation steps K",p_alpha:"α: how far labels spread",lg_edges:"graph edges (k-NN)",mn_gdens:"Graph: smoothed density",mn_gspec:"Graph: spectral cut",mn_glp:"Graph: label propagation",mn_sgc:"Graph: SGC (simplified GCN)",ms_gdens:"k-NN density averaged over graph neighbours (GCN propagation).",ms_gspec:"Splits the k-NN graph in two along its weakest links (Fiedler vector).",ms_glp:"Known colours spread along graph edges to unknown nodes; 5-fold CV.",ms_sgc:"Graph-convolved features + logistic regression, a minimal GNN; 5-fold CV.",md_gdens:"<b>Unsupervised graph method.</b> Build the k-NN graph (each point is a node, linked to its k nearest neighbours; edges are symmetric and distance-based only). Each node starts with its k-NN density, then K steps of the GCN message-passing operator H′ = D̃<sup>−½</sup>ÃD̃<sup>−½</sup>H (from <i>ML-MachineLearning-Graphs</i>, graph_learning_basics) average it over the neighbours. One step removes noise: F1 0.64 vs 0.62 for raw density on the distinct data. Many steps blur the ring into the background.",md_gspec:"<b>Unsupervised graph clustering.</b> The second eigenvector of the normalised k-NN graph (Fiedler vector) cuts the graph into two parts with as few edges between them as possible; the smaller part is called red. It is the idea behind spectral and Gromov–Wasserstein graph clustering in <i>ML-MachineLearning-Graphs</i>. Red and green are linked everywhere, so the weakest cut is geometric, not by colour: F1 ≈ 0.19 on the distinct data.",md_glp:"<b>Supervised (semi-supervised) graph method.</b> Label spreading (Zhou et al. 2004): the colours of the training nodes are injected into the k-NN graph and repeatedly passed to neighbours, F ← αSF + (1−α)Y₀, with the same normalised operator S as a GCN. Each node is scored by the share of red that reaches it. 5-fold CV: the colours of the scored nodes are hidden. Original data: 0.41, the same as the notebook's SVM.",md_sgc:"<b>Supervised graph neural network (SGC, Wu et al. 2019).</b> A GCN without the non-linearities: node features (polynomial features of X, Y and the k-NN density) are propagated K times over the graph, H = S<sup>K</sup>X, and a logistic regression is trained on the training nodes (5-fold CV). It is the minimal form of the graph-attention and GCN models in <i>ML-MachineLearning-Graphs</i>. On the original data it ties or beats the notebook's SVM (0.41–0.44, depending on the CV split) and on the ring it is close to the ceiling.",repo_graph:"Graph methods on this page are adapted from <a href=\"https://github.com/D2718281828nis/ML-MachineLearning-Graphs\">ML-MachineLearning-Graphs</a>: the k-NN graph from “Graph from DataFrame”, the message-passing operator from graph_learning_basics, and spectral (GW-style) graph clustering. Its graph also adds “type-based edges” between points of the same Type, and Type is the colour, so those edges leak the answer; they are not used here.",
 case_unsup:"Unsupervised learning",case_sup:"Supervised learning",case_unsup_h:"The method sees only X, Y. The colours are used only to score the result.",case_sup_h:"The method uses the true colours: to train a classifier (scored on held-out points), to choose the red cluster, or, for the Bayes optimum, the generator itself.",g_clf:"Classifiers trained on labels",g_lsel:"Clustering, labels pick the cluster",p_deg:"polynomial degree",p_logc:"log₁₀ C (higher = weaker regularisation)",mn_lr:"Logistic regression",mn_qda:"QDA (Gaussian per colour)",md_lr:"<b>Supervised.</b> Logistic regression on all polynomial features of X, Y up to the chosen degree, with balanced class weights and a little L2 regularisation. Scored by 5-fold cross-validation: every point is predicted by a model that never saw it. Degree 1 is a straight line and degree 2 a disk or ellipse; a ring needs degree 4 (r⁴ terms) to be enclosed from inside and outside. <b>Regularisation matters:</b> the ring is thin, so the coefficients must be large. With scikit-learn's default C = 1 (log₁₀ C = 0) F1 on the distinct data is about 0.07; with C = 10⁴ it is about 0.76, close to the Bayes ceiling.",md_qda:"<b>Supervised.</b> Quadratic discriminant analysis: fit one Gaussian to the red points and one to the green points of the training folds, then use Bayes' rule. It is the textbook supervised method, and exactly right when both colours are Gaussian blobs. It cannot describe a ring or a flat background, so it is not the right model for this data. Scored by 5-fold cross-validation.",ms_base:"Flags every point red. The floor any method must beat.",ms_km:"Two centroids and a straight cut between them. Ignores shape.",ms_gmm:"Two Gaussian blobs fitted by EM; posterior of one of them.",ms_ring:"EM fit of a noisy circle + uniform background. The right model for a ring.",ms_gu:"EM fit of one Gaussian blob + uniform background. The right model for a blob.",ms_fcm:"Soft K-Means: fuzzy membership in two centres.",ms_db:"Density-connected clusters; everything outside the largest one is red.",ms_kdd:"Dense neighbourhood → red. Works when red is concentrated.",ms_kd:"Sparse neighbourhood → red. Best label-free score on the original data.",ms_lnnd:"Sparser than its own neighbours → red (relative k-NN distance).",ms_lof:"Local Outlier Factor: the classic local-density outlier score.",ms_tsnek:"Density measured in the t-SNE map instead of X–Y.",ms_bayes:"Knows the true data generator (shape, parameters). A theoretical limit, not a real method.",ms_lr:"Polynomial logistic regression trained on the colours; 5-fold CV.",ms_qda:"One Gaussian per colour, learned from labels; 5-fold CV.",ms_sup:"Share of red among the k nearest neighbours (leave-one-out).",ms_tsne:"t-SNE map + DBSCAN; the true colours choose which cluster is red.",
 des_sub:"<b>Design your own data.</b> Choose how green and red points are distributed, and <b>click the map to place the centre</b> of the red circle or blob. The whole page follows: the map, the numbers above, the table on the right and the <a href=\"#lab\">interactive lab</a> switch to your custom data, and every classifier reruns. Choosing a method in the lab highlights it here, and clicking a row here opens it in the lab. The generator is the same as <code>make_distinct_dataset.py</code>; the browser uses its own random numbers, so individual points differ from the Python output, but the distributions are identical.",des_map:"Current dataset · click to set the red centre",des_res:"Classification on “{ds}”",des_res_hint:"Default parameters. Highlighted row = method open in the lab. Click a row to open it there.",des_hint_switch:"The page currently shows “{ds}”. Changing any setting or clicking the map switches everything, the lab included, to your custom data.",des_unclassified:"Settings changed. Press “Generate & classify” to update the lab and this table.",des_lg_blind:"unlabelled: what a method sees",
@@ -488,6 +494,8 @@ take_list:"<li><b>Always report the trivial baseline.</b> On the original data �
 footer:"ML-overlay-problem · <a href=\"https://github.com/D2718281828nis/ML-overlay-problem\">GitHub</a> · <a href=\"https://colab.research.google.com/github/D2718281828nis/ML-overlay-problem/blob/main/case_study-unsupervised-overlay-problem.ipynb\">Open notebook in Colab</a> · All computations on this page run client-side on the embedded CSVs."
 },
 ru:{
+des_shape:"Форма цепочек",d_walk:"Блуждание",d_circle:"Окружность",des_preset2:"Пример для графа: окружности",dd_red_circles:"{c} больших красных окружностей",dd_green_circles:"маленькие зелёные окружности (12–20 точек)",des_circle_h:"Окружности: каждая цепочка — замкнутая окружность (шаг 12 px, не ближе 30 px друг к другу). Красные окружности большие (~38 точек), зелёные маленькие (12–20). Граф по-прежнему даёт F1 ≈ 1,0 при k = 2 и k = 3, но маленькие окружности компактны, поэтому локальные методы вроде разреженности k-NN тоже находят сигнал (≈ 0,5–0,8). Форма «блуждание» — более строгий тест.",
+mn_gcomp:"Граф: компоненты связности",ms_gcomp:"Размер связной цепочки точки в графе k-NN. Побеждает, когда класс задан связностью.",note_gcomp:"{nc} компонент связности · самая большая: {big} точек",md_gcomp:"<b>Метод на графе без учителя.</b> Строим граф k-NN с малым k и находим его компоненты связности (обход в ширину). Каждая точка оценивается размером своей компоненты, самые большие компоненты считаются красными. Метод видит <i>глобальное</i> свойство — как далеко продолжается цепочка точки, — которое не видит ни одна локальная статистика. На примере с цепочками (красные — 6 длинных цепочек, зелёные — около 95 коротких, одинаковая плотность и одинаковая локальная форма) он даёт F1 ≈ 1,0, тогда как плотность, кластеризация и t-SNE остаются на базовом уровне или ниже. Важно k: у точки цепочки 2 соседа, поэтому k = 2 не соединяет цепочки между собой; при k ≥ 3 рёбра перескакивают между цепочками и компоненты сливаются.",d_chains_g:"Короткие цепочки",d_chains_r:"Длинные цепочки",des_rc:"Число красных цепочек",des_preset:"Пример для графа: цепочки",dd_red_chains:"{c} длинных красных цепочек",dd_green_chains:"короткие зелёные цепочки (12–20 точек)",des_chain_h:"Цепочки: каждая точка лежит на цепочке с шагом 12 px, а цепочки держатся не ближе 30 px друг от друга. Красные цепочки длинные, зелёные короткие, поэтому цвета отличаются только связностью, а не плотностью или положением. Попробуйте «Граф: компоненты связности» (k = 2).",
 g_graph:"Методы на графах (граф k-NN)",g_gnn:"Обучение на графе с размеченными узлами",p_hops:"шаги распространения K",p_alpha:"α: как далеко расходятся метки",lg_edges:"рёбра графа (k-NN)",mn_gdens:"Граф: сглаженная плотность",mn_gspec:"Граф: спектральный разрез",mn_glp:"Граф: распространение меток",mn_sgc:"Граф: SGC (упрощённая GCN)",ms_gdens:"Плотность k-NN, усреднённая по соседям в графе (распространение GCN).",ms_gspec:"Делит граф k-NN надвое по самым слабым связям (вектор Фидлера).",ms_glp:"Известные цвета растекаются по рёбрам графа к неизвестным узлам; 5-кратная CV.",ms_sgc:"Признаки после свёртки на графе + логистическая регрессия, минимальная GNN; 5-кратная CV.",md_gdens:"<b>Метод на графе без учителя.</b> Строим граф k-NN (каждая точка — узел, связанный с k ближайшими соседями; рёбра симметричные и только по расстоянию). Каждый узел начинает со своей плотности k-NN, затем K шагов оператора передачи сообщений GCN H′ = D̃<sup>−½</sup>ÃD̃<sup>−½</sup>H (из <i>ML-MachineLearning-Graphs</i>, graph_learning_basics) усредняют её по соседям. Один шаг убирает шум: F1 0,64 против 0,62 у простой плотности на различимых данных. Много шагов размывают кольцо в фон.",md_gspec:"<b>Кластеризация графа без учителя.</b> Второй собственный вектор нормированного графа k-NN (вектор Фидлера) делит граф на две части с минимумом рёбер между ними; меньшая часть считается красной. На этой идее основана спектральная и Громова–Вассерштейна кластеризация графов в <i>ML-MachineLearning-Graphs</i>. Красные и зелёные связаны повсюду, поэтому самый слабый разрез геометрический, а не по цвету: F1 ≈ 0,19 на различимых данных.",md_glp:"<b>Метод на графе с учителем (частичным).</b> Распространение меток (Zhou и др., 2004): цвета обучающих узлов вводятся в граф k-NN и многократно передаются соседям, F ← αSF + (1−α)Y₀, тем же нормированным оператором S, что и в GCN. Узел оценивается долей дошедшего до него красного. 5-кратная CV: цвета оцениваемых узлов скрыты. Исходные данные: 0,41 — как у SVM из ноутбука.",md_sgc:"<b>Графовая нейросеть с учителем (SGC, Wu и др., 2019).</b> GCN без нелинейностей: признаки узлов (полиномиальные признаки X, Y и плотность k-NN) K раз распространяются по графу, H = S<sup>K</sup>X, и на обучающих узлах обучается логистическая регрессия (5-кратная CV). Это минимальная форма моделей GCN и графового внимания из <i>ML-MachineLearning-Graphs</i>. На исходных данных не хуже SVM из ноутбука (0,41–0,44 в зависимости от разбиения CV), на кольце почти потолок.",repo_graph:"Методы на графах на этой странице адаптированы из <a href=\"https://github.com/D2718281828nis/ML-MachineLearning-Graphs\">ML-MachineLearning-Graphs</a>: граф k-NN из «Graph from DataFrame», оператор передачи сообщений из graph_learning_basics и спектральная (в духе GW) кластеризация графа. Там к графу добавляются ещё «рёбра по Type» между точками одного Type, а Type — это и есть цвет, поэтому такие рёбра выдают ответ; здесь они не используются.",
 case_unsup:"Обучение без учителя",case_sup:"Обучение с учителем",case_unsup_h:"Метод видит только X, Y. Цвета используются только для оценки результата.",case_sup_h:"Метод использует истинные цвета: чтобы обучить классификатор (оценка на отложенных точках), чтобы выбрать красный кластер или, как байесовский оптимум, знает сам генератор.",g_clf:"Классификаторы, обученные на метках",g_lsel:"Кластеризация, кластер выбирают метки",p_deg:"степень полинома",p_logc:"log₁₀ C (больше = слабее регуляризация)",mn_lr:"Логистическая регрессия",mn_qda:"QDA (гауссиана на цвет)",md_lr:"<b>С учителем.</b> Логистическая регрессия на всех полиномиальных признаках X, Y до выбранной степени, со сбалансированными весами классов и небольшой L2-регуляризацией. Оценка 5-кратной кросс-валидацией: каждую точку предсказывает модель, которая её не видела. Степень 1 — прямая, степень 2 — круг или эллипс; чтобы охватить кольцо изнутри и снаружи, нужна степень 4 (члены r⁴). <b>Регуляризация важна:</b> кольцо тонкое, поэтому коэффициенты должны быть большими. При C = 1 по умолчанию в scikit-learn (log₁₀ C = 0) F1 на различимых данных около 0,07, при C = 10⁴ — около 0,76, почти байесовский потолок.",md_qda:"<b>С учителем.</b> Квадратичный дискриминантный анализ: по одной гауссиане для красных и для зелёных точек обучающих фолдов, затем правило Байеса. Классический метод обучения с учителем, точный, когда оба цвета — гауссовы облака. Кольцо и равномерный фон он описать не может, поэтому для этих данных модель неверная. Оценка 5-кратной кросс-валидацией.",ms_base:"Все точки — красные. Нижняя планка, которую должен превзойти любой метод.",ms_km:"Два центроида и прямой разрез между ними. Форму не учитывает.",ms_gmm:"Две гауссианы, подобранные EM; вероятность одной из них.",ms_ring:"EM-подгонка зашумлённой окружности и равномерного фона. Верная модель для кольца.",ms_gu:"EM-подгонка одного гауссова облака и фона. Верная модель для облака.",ms_fcm:"Мягкий K-Means: нечёткая принадлежность к двум центрам.",ms_db:"Связные по плотности кластеры; всё вне самого большого — красное.",ms_kdd:"Плотная окрестность → красный. Работает, когда красные сосредоточены.",ms_kd:"Разреженная окрестность → красный. Лучшая оценка без меток на исходных данных.",ms_lnnd:"Разреженнее своих соседей → красный (относительное расстояние k-NN).",ms_lof:"Local Outlier Factor: классическая оценка выбросов по локальной плотности.",ms_tsnek:"Плотность, измеренная на карте t-SNE, а не в X–Y.",ms_bayes:"Знает истинный генератор данных (форму, параметры). Теоретический предел, а не реальный метод.",ms_lr:"Полиномиальная логистическая регрессия, обученная на цветах; 5-кратная CV.",ms_qda:"По одной гауссиане на цвет, обученной по меткам; 5-кратная CV.",ms_sup:"Доля красных среди k ближайших соседей (без самой точки).",ms_tsne:"Карта t-SNE + DBSCAN; какой кластер красный, решают истинные цвета.",
 des_sub:"<b>Создайте свои данные.</b> Выберите, как распределены зелёные и красные точки, и <b>щёлкните по карте, чтобы задать центр</b> красной окружности или облака. Вся страница следует за этим: карта, числа выше, таблица справа и <a href=\"#lab\">интерактивная лаборатория</a> переключаются на ваш датасет, и все классификаторы перезапускаются. Выбор метода в лаборатории подсвечивает его здесь, а щелчок по строке здесь открывает его в лаборатории. Генератор тот же, что и <code>make_distinct_dataset.py</code>; браузер использует свой генератор случайных чисел, поэтому отдельные точки отличаются от результата Python, но распределения те же.",des_map:"Текущий датасет · щёлкните, чтобы задать центр красных",des_res:"Классификация на «{ds}»",des_res_hint:"Параметры по умолчанию. Подсвеченная строка — метод, открытый в лаборатории. Щёлкните строку, чтобы открыть его там.",des_hint_switch:"Сейчас на странице «{ds}». Любое изменение настроек или щелчок по карте переключит всё, включая лабораторию, на ваш датасет.",des_unclassified:"Настройки изменены. Нажмите «Сгенерировать и классифицировать», чтобы обновить лабораторию и эту таблицу.",des_lg_blind:"без меток: так видит метод",
@@ -649,7 +657,8 @@ function useDataset(key){const D=buildDataset(key);DS=key;
   ({N,RX,RY,Y,EX,EY,NR,PR,BASE,mx,my,sx,sy,ZX,ZY,xmin,xmax,ymin,ymax,exmin,exmax,eymin,eymax,NI,ND,AREA}=D)}
 const INIT_DS=(()=>{try{const q=new URLSearchParams(location.search).get("data");if(q==="orig"||q==="dist"||q==="custom")return q}catch(e){}return"dist"})();
 /* ======================= designer generator ======================= */
-const DEF_P={green:"uniform",ng:1445,gs:400,red:"ring",nr:227,R:350,rs:15,cx:1046,cy:904,seed:42,clip:false};
+const DEF_P={green:"uniform",ng:1445,gs:400,red:"ring",nr:227,R:350,rs:15,cx:1046,cy:904,seed:42,clip:false,rc:6,shape:"walk"};
+const isChains=P=>!!P&&(P.red==="chains"||P.green==="chains");const hasCentre=P=>P.red==="ring"||P.red==="gaussian";
 let CP={...DEF_P};
 const ORIG=buildDataset("orig"),FPR=45,FCELL=45,FGRID=new Map();
 for(let i=0;i<ORIG.N;i++){const k=Math.floor(ORIG.RX[i]/FCELL)+","+Math.floor(ORIG.RY[i]/FCELL);if(!FGRID.has(k))FGRID.set(k,[]);FGRID.get(k).push(i)}
@@ -661,16 +670,31 @@ function makeCustom(){if(DATASETS.custom&&DATASETS.custom.workers)DATASETS.custo
   const unif=()=>[FLO[0]+R()*(FHI[0]-FLO[0]),FLO[1]+R()*(FHI[1]-FLO[1])];
   const blob=(c,s)=>()=>[c[0]+s*nrm(),c[1]+s*nrm()];
   const ring=(c,Rr,s)=>()=>{const th=2*Math.PI*R(),r=Rr+s*nrm();return[c[0]+r*Math.cos(th),c[1]+r*Math.sin(th)]};
+  // chains: smooth random walks with a 12 px step inside F, other chains kept >= 30 px away (same as ChainField in Python)
+  const STEP=12,GAP=30,TURN=.35,cp=[],co=[],cg=new Map(),ck=(x,y)=>Math.floor(x/GAP)+","+Math.floor(y/GAP);
+  const blocked=(x,y,ch,st,len)=>{const a=Math.floor(x/GAP),b=Math.floor(y/GAP);for(let i=a-1;i<=a+1;i++)for(let j=b-1;j<=b+1;j++){const L=cg.get(i+","+j);if(L)for(const q of L){if(co[q]===ch&&q>=st+len-3)continue;if((cp[q][0]-x)**2+(cp[q][1]-y)**2<GAP*GAP)return true}}return false};
+  const addP=(p,ch)=>{cp.push(p);co.push(ch);const k=ck(p[0],p[1]);if(!cg.has(k))cg.set(k,[]);cg.get(k).push(cp.length-1)};
+  const undo=st=>{while(cp.length>st){const p=cp.pop();co.pop();cg.get(ck(p[0],p[1])).pop()}};
+  const circle=(n,ch)=>{const r=STEP/(2*Math.sin(Math.PI/n)),st=cp.length;
+    for(let t=0;t<600;t++){const o=Math.floor(R()*ORIG.N),cx=ORIG.RX[o]+20*nrm(),cy=ORIG.RY[o]+20*nrm(),a=2*Math.PI*R(),pts=[];let ok=true;
+      for(let j=0;j<n&&ok;j++){const th=a+2*Math.PI*j/n,x=cx+r*Math.cos(th),y=cy+r*Math.sin(th);if(!inFoot(x,y)||blocked(x,y,ch,st,0))ok=false;else pts.push([x,y])}
+      if(ok){pts.forEach(q=>addP(q,ch));return n}}return 0};
+  const grow=(n,ch)=>{if(CP.shape==="circle")return circle(n,ch);const st=cp.length;let p=null;for(let t=0;t<200&&!p;t++){const o=Math.floor(R()*ORIG.N),q=[ORIG.RX[o]+20*nrm(),ORIG.RY[o]+20*nrm()];if(inFoot(q[0],q[1])&&!blocked(q[0],q[1],ch,st,0))p=q}if(!p)return 0;
+    addP(p,ch);let th=2*Math.PI*R();
+    while(cp.length-st<n){let q=null,t2;for(let a=0;a<30&&!q;a++){t2=th+TURN*nrm();const l=cp[cp.length-1],c=[l[0]+STEP*Math.cos(t2),l[1]+STEP*Math.sin(t2)];if(inFoot(c[0],c[1])&&!blocked(c[0],c[1],ch,st,cp.length-st))q=c}if(!q)break;th=t2;addP(q,ch)}return cp.length-st};
+  const chains=(total,lenF,id0,exact)=>{let got=0,cid=id0,fails=0,streak=0;const out=[];while(got<total&&fails<20000&&streak<300){const want=Math.min(lenF(cid-id0),total-got),st=cp.length,n=grow(want,cid);
+      if(exact?n<want:n<Math.min(12,want)){undo(st);fails++;streak++;continue}streak=0;for(let i=st;i<cp.length;i++)out.push(cp[i]);got+=n;cid++}return out};
+  let Rd=null;if(CP.red==="chains"){const k=CP.rc;Rd=chains(CP.nr,i=>Math.floor(CP.nr/k)+(i<CP.nr%k?1:0),1e6,true)}
   const ng=CP.green==="uniform"?Math.max(1,Math.round(CP.ng+Math.sqrt(CP.ng)*nrm())):CP.ng;
-  const G=draw(ng,CP.green==="uniform"?unif:blob(FCEN,CP.gs));
-  const rs_=CP.red==="ring"?ring([CP.cx,CP.cy],CP.R,CP.rs):CP.red==="gaussian"?blob([CP.cx,CP.cy],CP.rs):unif;
-  const Rd=(CP.clip||CP.red==="uniform")?draw(CP.nr,rs_):Array.from({length:CP.nr},rs_);
+  const G=CP.green==="chains"?chains(CP.ng,()=>12+Math.floor(R()*9),0,false):draw(ng,CP.green==="uniform"?unif:blob(FCEN,CP.gs));
+  if(!Rd){const rs_=CP.red==="ring"?ring([CP.cx,CP.cy],CP.R,CP.rs):CP.red==="gaussian"?blob([CP.cx,CP.cy],CP.rs):unif;
+    Rd=(CP.clip||CP.red==="uniform")?draw(CP.nr,rs_):Array.from({length:CP.nr},rs_)}
   const all=G.concat(Rd),n=all.length;
   DATASETS.custom={file:"my_data.csv",RX:Float64Array.from(all,p=>Math.round(p[0])),RY:Float64Array.from(all,p=>Math.round(p[1])),Y:Uint8Array.from(all,(p,i)=>i>=G.length?1:0),areaPx:ORIG.AREA_PX,params:{...CP}};
   for(const k in cache)if(k.startsWith("custom"))delete cache[k];
   return DATASETS.custom}
-function customDesc(P){P=P||CP;const red=P.red==="ring"?T("dd_red_ring",{R:P.R,s:P.rs,cx:P.cx,cy:P.cy}):P.red==="gaussian"?T("dd_red_gauss",{s:P.rs,cx:P.cx,cy:P.cy}):T("dd_red_uniform");
-  return red+"; "+(P.green==="uniform"?T("dd_green_uniform"):T("dd_green_gauss",{s:P.gs}))}
+function customDesc(P){P=P||CP;const red=P.red==="chains"?T(P.shape==="circle"?"dd_red_circles":"dd_red_chains",{c:P.rc}):P.red==="ring"?T("dd_red_ring",{R:P.R,s:P.rs,cx:P.cx,cy:P.cy}):P.red==="gaussian"?T("dd_red_gauss",{s:P.rs,cx:P.cx,cy:P.cy}):T("dd_red_uniform");
+  return red+"; "+(P.green==="uniform"?T("dd_green_uniform"):P.green==="chains"?T(P.shape==="circle"?"dd_green_circles":"dd_green_chains"):T("dd_green_gauss",{s:P.gs}))}
 
 if(INIT_DS==="custom")makeCustom();
 useDataset(INIT_DS);
@@ -861,6 +885,9 @@ function gcnOp(nb){const deg=Float64Array.from(nb,s=>s.length+1),ptr=new Int32Ar
   const col=new Int32Array(ptr[N]),w=new Float64Array(ptr[N]),self=Float64Array.from(deg,d=>1/d);
   for(let i=0;i<N;i++){let q=ptr[i];for(const j of nb[i]){col[q]=j;w[q]=1/Math.sqrt(deg[i]*deg[j]);q++}}
   return x=>{const y=new Float64Array(N);for(let i=0;i<N;i++){let a=x[i]*self[i];for(let q=ptr[i];q<ptr[i+1];q++)a+=x[col[q]]*w[q];y[i]=a}return y}}
+function graphComponents(k){const nb=knnGraph(k),lab=new Int32Array(N).fill(-1),size=[];let c=0;
+  for(let i=0;i<N;i++){if(lab[i]>=0)continue;const q=[i];lab[i]=c;for(let h=0;h<q.length;h++)for(const j of nb[q[h]])if(lab[j]<0){lab[j]=c;q.push(j)}size.push(q.length);c++}
+  return{score:Float64Array.from(lab,(l,i)=>size[l]-1e-6*dk(i,1)),nc:c,big:Math.max(...size)}}
 function graphDensity(k,K){const S=gcnOp(knnGraph(k));let s=Float64Array.from({length:N},(_,i)=>-dk(i,k));for(let h=0;h<K;h++)s=S(s);return s}
 function graphSpectral(k){const nb=knnGraph(k),S=gcnOp(nb),u=Float64Array.from(nb,s=>Math.sqrt(s.length+1)),R=rng(5);let un=0;for(const v of u)un+=v*v;un=Math.sqrt(un);for(let i=0;i<N;i++)u[i]/=un;
   let v=Float64Array.from({length:N},()=>R()-.5);
@@ -920,14 +947,16 @@ const METHODS=[
  {id:"lr",grp:"g_clf",type:"score",sup:true,params:[{k:"deg",l:"p_deg",min:1,max:6,v:4},{k:"logC",l:"p_logc",min:-2,max:6,step:.5,v:4}],run:p=>({score:logregCV(p.deg,p.logC)})},
  {id:"qda",grp:"g_clf",type:"score",sup:true,params:[],run:()=>({score:qdaCV()})},
  {id:"gdens",grp:"g_graph",type:"score",params:[{k:"k",l:"k",min:3,max:30,v:10},{k:"K",l:"p_hops",min:0,max:10,v:1}],run:p=>({score:graphDensity(p.k,p.K),edges:p.k})},
+ {id:"gcomp",grp:"g_graph",type:"score",params:[{k:"k",l:"k",min:1,max:10,v:2}],run:p=>{const r=graphComponents(p.k);return{score:r.score,edges:p.k,noteK:"note_gcomp",noteV:{nc:r.nc,big:r.big}}}},
  {id:"gspec",grp:"g_graph",type:"hard",params:[{k:"k",l:"k",min:3,max:30,v:10}],run:p=>({...graphSpectral(p.k),edges:p.k})},
  {id:"glp",grp:"g_gnn",type:"score",sup:true,params:[{k:"k",l:"k",min:3,max:30,v:10},{k:"alpha",l:"p_alpha",min:.5,max:.99,step:.01,v:.9}],run:p=>({score:labelPropCV(p.k,p.alpha),edges:p.k})},
  {id:"sgc",grp:"g_gnn",type:"score",sup:true,params:[{k:"k",l:"k",min:3,max:30,v:10},{k:"K",l:"p_hops",min:0,max:6,v:2},{k:"logC",l:"p_logc",min:-2,max:6,step:.5,v:4}],run:p=>({score:sgcCV(p.k,p.K,p.logC),edges:p.k})}
 ];
 // unsupervised first, then supervised; groups stay contiguous
-const ORDER=["base","km","gmm","ring","gu","fcm","db","kdd","kd","lnnd","lof","tsnek","gdens","gspec","bayes","lr","qda","sup","glp","sgc","tsne"];
+const ORDER=["base","km","gmm","ring","gu","fcm","db","kdd","kd","lnnd","lof","tsnek","gcomp","gdens","gspec","bayes","lr","qda","sup","glp","sgc","tsne"];
 METHODS.sort((a,b)=>ORDER.indexOf(a.id)-ORDER.indexOf(b.id));
 const caseOf=m=>m.sup?"sup":"unsup";
+function avail(m,ds){if(m.only&&!m.only.includes(ds))return false;if(m.id==="bayes"&&ds==="custom"&&DATASETS.custom&&isChains(DATASETS.custom.params))return false;return true}
 const mname=m=>T("mn_"+m.id);
 
 /* ======================= lab state ======================= */
@@ -944,7 +973,7 @@ function renderMethods(){const cur=METHODS.find(x=>x.id===state.m),cs=caseOf(cur
   mEl.innerHTML=`<div class="seg caseSeg">${["unsup","sup"].map(c=>`<button data-c="${c}" class="${c===cs?"on":""}">${T("case_"+c)}</button>`).join("")}</div><div class="hint casehint">${T("case_"+cs+"_h")}</div>`;
   mEl.querySelectorAll(".caseSeg button").forEach(b=>b.onclick=()=>{if(b.dataset.c===cs)return;state.m=b.dataset.c==="sup"?"lr":defaultMethod(DS);const m=METHODS.find(x=>x.id===state.m);if(m.type==="score")state.frac=PR;renderMethods();renderControls();update()});
   let g="";
-  METHODS.filter(m=>(!m.only||m.only.includes(DS))&&caseOf(m)===cs).forEach(m=>{if(m.grp!==g){g=m.grp;const d=document.createElement("div");d.className="grp";d.textContent=T(g);mEl.appendChild(d)}
+  METHODS.filter(m=>avail(m,DS)&&caseOf(m)===cs).forEach(m=>{if(m.grp!==g){g=m.grp;const d=document.createElement("div");d.className="grp";d.textContent=T(g);mEl.appendChild(d)}
     const b=document.createElement("button");b.className="mbtn"+(m.id===state.m?" on":"");
     b.innerHTML=`<span class="mt"><span>${mname(m)}</span><span class="f" id="mf_${m.id}"></span></span><span class="ms">${T("ms_"+m.id)}</span>`;
     b.onclick=()=>{state.m=m.id;if(m.type==="score")state.frac=PR;renderMethods();renderControls();update()};mEl.appendChild(b)});
@@ -1120,7 +1149,7 @@ document.querySelectorAll("#resSeg button").forEach(b=>b.onclick=()=>{document.q
 
 /* ======================= comparison table ======================= */
 let CMP=null;
-function defaultF1(id){const m=METHODS.find(x=>x.id===id);if(m.only&&!m.only.includes(DS))return NaN;const key=DS+id+JSON.stringify(Object.fromEntries(m.params.map(p=>[p.k,p.v])));
+function defaultF1(id){const m=METHODS.find(x=>x.id===id);if(!avail(m,DS))return NaN;const key=DS+id+JSON.stringify(Object.fromEntries(m.params.map(p=>[p.k,p.v])));
   if(!cache[key]){const sv=state.params[id];state.params[id]=Object.fromEntries(m.params.map(p=>[p.k,p.v]));runMethod(id);state.params[id]=sv}
   const r=cache[key];if(!r||r.pending)return NaN;return r.pred?confusion(r.pred).f:r.curve.f[Math.round(PR*N)]}
 function compareTable(){if(!CMP){const cur=DS;CMP={};for(const d of ["orig","dist"]){useDataset(d);CMP[d]={};METHODS.forEach(m=>CMP[d][m.id]=defaultF1(m.id))}useDataset(cur)}
@@ -1135,10 +1164,10 @@ function setUrl(k,v){try{const u=new URL(location.href);u.searchParams.set(k,v);
 function syncDs(){document.querySelectorAll(".dsSeg button").forEach(b=>b.classList.toggle("on",b.dataset.ds===DS));
   document.getElementById("dsHero").textContent=T("ds_hero_"+DS);document.getElementById("dsHeroNote").innerHTML=T("ds_note_"+DS,{base:num(BASE,3),desc:DS==="custom"?customDesc(DATASETS.custom.params):""});setUrl("data",DS);if(DS!=="custom"&&$("desBusy"))$("desBusy").textContent="";const sn=$("desSwitchNote");if(sn){sn.innerHTML=DS==="custom"?"":T("des_hint_switch",{ds:T("ds_"+DS+"_short")});sn.style.display=DS==="custom"?"none":""}if(typeof renderDesTable==="function")renderDesTable()}
 function redraw(){trap();signal();drawHow();update();drawDes()}
-function defaultMethod(key){const P=key==="custom"?DATASETS.custom.params:null;return key==="orig"?"kd":key==="dist"?"ring":P.red==="ring"?"ring":P.red==="gaussian"?"gu":"kdd"}
+function defaultMethod(key){const P=key==="custom"?DATASETS.custom.params:null;return key==="orig"?"kd":key==="dist"?"ring":P.red==="chains"?"gcomp":P.red==="ring"?"ring":P.red==="gaussian"?"gu":"kdd"}
 function switchDataset(key,force){if(key===DS&&!force)return;if(key==="custom"&&(!DATASETS.custom||!Object.keys(DES).length)){desRun(!!DATASETS.custom,true);return}desStale=false;useDataset(key);
   state.m=defaultMethod(key);
-  state.frac=PR;syncDs();results();problem();renderMethods();renderControls();redraw();setTimeout(()=>{METHODS.forEach(m=>{if(!m.only||m.only.includes(DS))runMethod(m.id)});renderMethods()},30)}
+  state.frac=PR;syncDs();results();problem();renderMethods();renderControls();redraw();setTimeout(()=>{METHODS.forEach(m=>{if(avail(m,DS))runMethod(m.id)});renderMethods()},30)}
 document.querySelectorAll(".dsSeg button").forEach(b=>b.onclick=()=>switchDataset(b.dataset.ds));
 function applyLang(){document.documentElement.lang=LANG;document.querySelectorAll("[data-t]").forEach(el=>el.innerHTML=T(el.dataset.t));
   document.querySelectorAll(".langSeg button").forEach(b=>b.classList.toggle("on",b.dataset.lang===LANG));document.title=LANG==="ru"?"Лаборатория наложения":"Overlay Clustering Lab"}
@@ -1153,21 +1182,24 @@ let rz;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>
 /* ======================= designer UI ======================= */
 let DES={},desTok=0,desTimer=null,desT0=0;
 const $=id=>document.getElementById(id);
-function desUI(){$("v_ng").textContent=intf(CP.ng);$("v_gs").textContent=CP.gs;$("v_nr").textContent=CP.nr;$("v_R").textContent=CP.R;$("v_rs").textContent=CP.rs;$("v_seed").textContent=CP.seed;
-  $("v_c").textContent=`(${CP.cx}, ${CP.cy})`;$("clipRed").checked=!!CP.clip;$("clipLbl").style.display=CP.red==="uniform"?"none":"";$("l_rs").textContent=T(CP.red==="ring"?"des_rs_ring":"des_rs_gauss");
-  $("ctl_gs").style.display=CP.green==="gaussian"?"":"none";$("ctl_R").style.display=CP.red==="ring"?"":"none";$("ctl_rs").style.display=CP.red==="uniform"?"none":"";$("ctl_c").style.display=CP.red==="uniform"?"none":"";
+function desUI(){$("v_ng").textContent=intf(CP.ng);$("v_gs").textContent=CP.gs;$("v_nr").textContent=CP.nr;$("v_R").textContent=CP.R;$("v_rs").textContent=CP.rs;$("v_seed").textContent=CP.seed;$("v_rc").textContent=CP.rc;$("s_rc").value=CP.rc;
+  $("ctl_rc").style.display=CP.red==="chains"?"":"none";$("chainHint").style.display=isChains(CP)&&CP.shape!=="circle"?"":"none";$("circleHint").style.display=isChains(CP)&&CP.shape==="circle"?"":"none";$("ctl_shape").style.display=isChains(CP)?"":"none";document.querySelectorAll("#shapeSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===(CP.shape||"walk")));
+  $("v_c").textContent=`(${CP.cx}, ${CP.cy})`;$("clipRed").checked=!!CP.clip;$("clipLbl").style.display=hasCentre(CP)?"":"none";$("l_rs").textContent=T(CP.red==="ring"?"des_rs_ring":"des_rs_gauss");
+  $("ctl_gs").style.display=CP.green==="gaussian"?"":"none";$("ctl_R").style.display=CP.red==="ring"?"":"none";$("ctl_rs").style.display=hasCentre(CP)?"":"none";$("ctl_c").style.display=hasCentre(CP)?"":"none";
   ["s_ng","s_gs","s_nr","s_R","s_rs","s_seed"].forEach((id,i)=>$(id).value=[CP.ng,CP.gs,CP.nr,CP.R,CP.rs,CP.seed][i]);
   document.querySelectorAll("#gDist button").forEach(b=>b.classList.toggle("on",b.dataset.v===CP.green));document.querySelectorAll("#rDist button").forEach(b=>b.classList.toggle("on",b.dataset.v===CP.red));
-  const cli=["python make_distinct_dataset.py"];if(CP.green!=="uniform")cli.push("--green gaussian --green-sigma "+CP.gs);if(CP.ng!==1445)cli.push("--n-green "+CP.ng);
-  if(CP.red!=="ring")cli.push("--red "+CP.red);if(CP.nr!==227)cli.push("--n-red "+CP.nr);if(CP.red!=="uniform")cli.push(`--center ${CP.cx} ${CP.cy}`);if(CP.red==="ring")cli.push("--radius "+CP.R);if(CP.red!=="uniform")cli.push("--sigma "+CP.rs);
-  if(CP.clip&&CP.red!=="uniform")cli.push("--clip-red");if(CP.seed!==42)cli.push("--seed "+CP.seed);cli.push("--out my_data.csv");$("desCli").textContent=cli.join(" ")}
+  const cli=["python make_distinct_dataset.py"];
+  if(CP.green==="gaussian")cli.push("--green gaussian --green-sigma "+CP.gs);if(CP.green==="chains")cli.push("--green chains");if(CP.ng!==1445)cli.push("--n-green "+CP.ng);
+  if(CP.red!=="ring")cli.push("--red "+CP.red);if(CP.red==="chains"&&CP.rc!==6)cli.push("--red-chains "+CP.rc);if(isChains(CP)&&CP.shape==="circle")cli.push("--chain-shape circle");if(CP.nr!==227)cli.push("--n-red "+CP.nr);
+  if(hasCentre(CP))cli.push(`--center ${CP.cx} ${CP.cy}`);if(CP.red==="ring")cli.push("--radius "+CP.R);if(hasCentre(CP))cli.push("--sigma "+CP.rs);
+  if(CP.clip&&hasCentre(CP))cli.push("--clip-red");if(CP.seed!==42)cli.push("--seed "+CP.seed);cli.push("--out my_data.csv");$("desCli").textContent=cli.join(" ")}
 let desM=null;
 let desStale=false;
 function mapData(){return (DS==="custom"||desStale)?DATASETS.custom:buildDataset(DS)}
 const showShape=()=>DS==="custom"||desStale;
 function desBounds(){const lo=[FLO[0],FLO[1]],hi=[FHI[0],FHI[1]],D=mapData();
   if(D)for(let i=0;i<D.RX.length;i++){lo[0]=Math.min(lo[0],D.RX[i]);lo[1]=Math.min(lo[1],D.RY[i]);hi[0]=Math.max(hi[0],D.RX[i]);hi[1]=Math.max(hi[1],D.RY[i])}
-  if(showShape()&&CP.red!=="uniform"){const e=CP.red==="ring"?CP.R+2*CP.rs:2*CP.rs;lo[0]=Math.min(lo[0],CP.cx-e);lo[1]=Math.min(lo[1],CP.cy-e);hi[0]=Math.max(hi[0],CP.cx+e);hi[1]=Math.max(hi[1],CP.cy+e)}
+  if(showShape()&&hasCentre(CP)){const e=CP.red==="ring"?CP.R+2*CP.rs:2*CP.rs;lo[0]=Math.min(lo[0],CP.cx-e);lo[1]=Math.min(lo[1],CP.cy-e);hi[0]=Math.max(hi[0],CP.cx+e);hi[1]=Math.max(hi[1],CP.cy+e)}
   const m=20;return[[lo[0]-m,lo[1]-m],[hi[0]+m,hi[1]+m]]}
 function drawDes(){const cv=$("desCanvas");if(!cv)return;const{ctx,w,h}=setupCanvas(cv,0.86),[BL,BH]=desBounds(),pad=14,sc=Math.min((w-2*pad)/(BH[0]-BL[0]),(h-2*pad)/(BH[1]-BL[1])),ox=(w-sc*(BH[0]-BL[0]))/2,oy=(h-sc*(BH[1]-BL[1]))/2;
   const px=x=>ox+(x-BL[0])*sc,py=y=>h-oy-(y-BL[1])*sc;desM={sc,ox,oy,h,inv:(X,Yv)=>[BL[0]+(X-ox)/sc,BL[1]+(h-oy-Yv)/sc]};
@@ -1181,11 +1213,11 @@ function drawDes(){const cv=$("desCanvas");if(!cv)return;const{ctx,w,h}=setupCan
   if(CP.red==="gaussian")[[CP.rs,[],.9],[2*CP.rs,[4,4],.45]].forEach(([r,d,a])=>{ctx.beginPath();ctx.arc(px(CP.cx),py(CP.cy),r*sc,0,7);ctx.setLineDash(d);ctx.globalAlpha=a;ctx.stroke()});
   if(CP.green==="gaussian"){ctx.strokeStyle=css("--green");ctx.beginPath();ctx.arc(px(FCEN[0]),py(FCEN[1]),CP.gs*sc,0,7);ctx.setLineDash([6,4]);ctx.globalAlpha=.7;ctx.stroke()}
   ctx.setLineDash([]);ctx.globalAlpha=1;
-  if(CP.red!=="uniform"){const x=px(CP.cx),y=py(CP.cy);ctx.strokeStyle=css("--surface");ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x-9,y);ctx.lineTo(x+9,y);ctx.moveTo(x,y-9);ctx.lineTo(x,y+9);ctx.stroke();
+  if(hasCentre(CP)){const x=px(CP.cx),y=py(CP.cy);ctx.strokeStyle=css("--surface");ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x-9,y);ctx.lineTo(x+9,y);ctx.moveTo(x,y-9);ctx.lineTo(x,y+9);ctx.stroke();
     ctx.strokeStyle=css("--accent");ctx.lineWidth=2.4;ctx.stroke()}}
-  $("desLegend").innerHTML=(blind?`<span><i style="background:var(--faint)"></i>${T("des_lg_blind")}</span>`:`<span><i style="background:var(--red)"></i>${T("red")}</span><span><i style="background:var(--green)"></i>${T("green")}</span>`)+(!showShape()?"":`${CP.red==="ring"?`<span>◯ ${T("des_lg_ring")}</span>`:CP.red==="gaussian"?`<span>◯ ${T("des_lg_blob")}</span>`:""}${CP.green==="gaussian"?`<span style="color:var(--green)">◌ ${T("des_lg_gblob")}</span>`:""}${CP.red!=="uniform"?`<span style="color:var(--accent)">✛ ${T("des_lg_c")}</span>`:""}`)}
+  $("desLegend").innerHTML=(blind?`<span><i style="background:var(--faint)"></i>${T("des_lg_blind")}</span>`:`<span><i style="background:var(--red)"></i>${T("red")}</span><span><i style="background:var(--green)"></i>${T("green")}</span>`)+(!showShape()?"":`${CP.red==="ring"?`<span>◯ ${T("des_lg_ring")}</span>`:CP.red==="gaussian"?`<span>◯ ${T("des_lg_blob")}</span>`:""}${CP.green==="gaussian"?`<span style="color:var(--green)">◌ ${T("des_lg_gblob")}</span>`:""}${hasCentre(CP)?`<span style="color:var(--accent)">✛ ${T("des_lg_c")}</span>`:""}`)}
 document.querySelectorAll("#mapSeg button").forEach(b=>b.onclick=()=>{mapMode=b.dataset.v;document.querySelectorAll("#mapSeg button").forEach(x=>x.classList.toggle("on",x===b));drawDes()});
-function renderDesTable(){if(!$("desTable"))return;const src=DS==="custom"?DES:(CMP&&CMP[DS])||{},rows=METHODS.filter(m=>!m.only||m.only.includes(DS)),base=src.base;
+function renderDesTable(){if(!$("desTable"))return;const src=DS==="custom"?DES:(CMP&&CMP[DS])||{},rows=METHODS.filter(m=>avail(m,DS)),base=src.base;
   $("desResH").textContent=T("des_res",{ds:T("ds_"+DS+"_short")});
   let h=(desStale&&!$("autoRun").checked)?`<tr><td colspan="3" class="hint" style="color:var(--warn)">${T("des_unclassified")}</td></tr>`:"";
   h+=`<tr><th>${T("cmp_m")}</th><th>${T("des_th_f")}</th><th>${T("des_th_l")}</th></tr>`;
@@ -1199,32 +1231,37 @@ function renderDesTable(){if(!$("desTable"))return;const src=DS==="custom"?DES:(
   const tb=$("desTable");tb.innerHTML=h;tb.querySelectorAll("tr[data-m]").forEach(tr=>tr.onclick=()=>selectInLab(tr.dataset.m))}
 function selectInLab(mid){state.m=mid;const m=METHODS.find(x=>x.id===mid);if(m.type==="score")state.frac=PR;renderMethods();renderControls();update();location.hash="#lab"}
 function openCustom(){if(DS!=="custom")switchDataset("custom",true);location.hash="#lab"}
-const validFor=(id,ds)=>{const m=METHODS.find(x=>x.id===id);return m&&(!m.only||m.only.includes(ds))};
+let pendingMethod=null;
+const validFor=(id,ds)=>{const m=METHODS.find(x=>x.id===id);return m&&(avail(m,ds))};
 const desB=s=>{$("desBusy").textContent=DS==="custom"?s:""};
 function desRun(skipGen,follow){const tok=++desTok;desT0=performance.now();desB(T("des_gen"));
   setTimeout(()=>{if(tok!==desTok)return;if(!skipGen)makeCustom();buildDataset("custom");DES={};desStale=false;
-    if(follow||DS==="custom"){const was=DS;useDataset("custom");if(was!=="custom"||!validFor(state.m,"custom"))state.m=defaultMethod("custom");state.frac=PR;syncDs();problem();renderMethods();renderControls();redraw();results()}
+    if(follow||DS==="custom"){const was=DS;useDataset("custom");if(was!=="custom"||!validFor(state.m,"custom"))state.m=defaultMethod("custom");if(pendingMethod){state.m=pendingMethod;pendingMethod=null}state.frac=PR;syncDs();problem();renderMethods();renderControls();redraw();results()}
     drawDes();renderDesTable();
-    const list=METHODS.filter(m=>!m.only||m.only.includes("custom"));let i=0;
+    const list=METHODS.filter(m=>avail(m,"custom"));let i=0;
     const step=()=>{if(tok!==desTok)return;if(i>=list.length){desB(T("des_done",{s:num((performance.now()-desT0)/1000,1)}));renderDesTable();if(CMP)compareTable();if(DS==="custom"){results();renderMethods()}return}
       desB(T("des_cls",{i:i+1,n:list.length}));const m=list[i++];const cur=DS;useDataset("custom");const v=defaultF1(m.id);
       if(!isFinite(v)&&(m.id==="tsne"||m.id==="tsnek")){const P=startEmb(buildDataset("custom"),30);useDataset(cur);desB(T("des_tsne"));i--;P.then(()=>{if(tok===desTok)setTimeout(step,0)});return}
       DES[m.id]=v;useDataset(cur);renderDesTable();setTimeout(step,0)};
     setTimeout(step,0)},20)}
 function desChanged(now){desUI();makeCustom();desStale=true;drawDes();renderDesTable();clearTimeout(desTimer);if($("autoRun").checked)desTimer=setTimeout(()=>desRun(true,true),now?0:300)}
-[["s_ng","ng"],["s_gs","gs"],["s_nr","nr"],["s_R","R"],["s_rs","rs"],["s_seed","seed"]].forEach(([id,k])=>$(id).oninput=e=>{CP[k]=+e.target.value;desChanged()});
+[["s_ng","ng"],["s_gs","gs"],["s_nr","nr"],["s_R","R"],["s_rs","rs"],["s_seed","seed"],["s_rc","rc"]].forEach(([id,k])=>$(id).oninput=e=>{CP[k]=+e.target.value;desChanged()});
 document.querySelectorAll("#gDist button").forEach(b=>b.onclick=()=>{CP.green=b.dataset.v;desChanged()});
 $("clipRed").onchange=e=>{CP.clip=e.target.checked;desChanged()};
 document.querySelectorAll("#rDist button").forEach(b=>b.onclick=()=>{CP.red=b.dataset.v;if(CP.red==="gaussian"&&CP.rs<40)CP.rs=120;if(CP.red==="ring"&&CP.rs>80)CP.rs=15;desChanged()});
-$("desCanvas").addEventListener("click",e=>{if(!desM||CP.red==="uniform")return;const b=$("desCanvas").getBoundingClientRect(),[x,y]=desM.inv(e.clientX-b.left,e.clientY-b.top);
+$("desCanvas").addEventListener("click",e=>{if(!desM||!hasCentre(CP))return;const b=$("desCanvas").getBoundingClientRect(),[x,y]=desM.inv(e.clientX-b.left,e.clientY-b.top);
   CP.cx=Math.round(Math.min(FHI[0],Math.max(FLO[0],x)));CP.cy=Math.round(Math.min(FHI[1],Math.max(FLO[1],y)));desChanged(true)});
-$("desRun").onclick=()=>desRun(false,true);$("desReset").onclick=()=>{CP={...DEF_P};desChanged()};$("desOpen").onclick=()=>openCustom();
+$("desRun").onclick=()=>desRun(false,true);$("desReset").onclick=()=>{CP={...DEF_P};desChanged()};
+$("desPreset").onclick=()=>{CP={...DEF_P,green:"chains",red:"chains",rc:6,shape:"walk"};pendingMethod="gcomp";desChanged(true)};
+$("desPreset2").onclick=()=>{CP={...DEF_P,green:"chains",red:"chains",rc:6,shape:"circle",seed:15}; // seed 15: best overlay in the browser generator (centres 0.01σ apart)
+ pendingMethod="gcomp";desChanged(true)};
+document.querySelectorAll("#shapeSeg button").forEach(b=>b.onclick=()=>{CP.shape=b.dataset.v;desChanged()});$("desOpen").onclick=()=>openCustom();
 
 /* ======================= init ======================= */
 state.m=defaultMethod(DS);
 if(!DATASETS.custom)makeCustom();
 applyLang();desUI();syncDs();problem();results("score");renderMethods();renderControls();redraw();
-setTimeout(()=>{METHODS.forEach(m=>{if(!m.only||m.only.includes(DS))runMethod(m.id)});renderMethods();setTimeout(()=>{compareTable();desRun(true,DS==="custom")},30)},50);
+setTimeout(()=>{METHODS.forEach(m=>{if(avail(m,DS))runMethod(m.id)});renderMethods();setTimeout(()=>{compareTable();desRun(true,DS==="custom")},30)},50);
 </script>
 </body>
 </html>

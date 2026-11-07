@@ -387,6 +387,16 @@ spec = SpectralClustering(2, affinity='precomputed', random_state=0).fit_predict
 gspec_labels = spec if spec.mean() < 0.5 else 1 - spec
 gspec_f1 = report("9b. Graph spectral cut (no labels, smaller part = red)", gspec_labels)
 
+# 9e. unsupervised: connected components of a k-NN graph with SMALL k (k = 2).
+# Score = size of the point's component; the largest components are red. This is the
+# method that wins when the classes differ only in connectivity, e.g. on
+# df_red_green_chains.csv (red = long chains, green = short chains): F1 = 1.0 there.
+from scipy.sparse.csgraph import connected_components
+A2 = kneighbors_graph(X_std, 2, mode='connectivity', include_self=False)
+n_comp, comp = connected_components(((A2 + A2.T) > 0).astype(float), directed=False)
+gcomp_labels = flag_top(np.bincount(comp)[comp].astype(float), n_flag)
+gcomp_f1 = report(f"9e. Graph connected components, k=2 (no labels; {n_comp} components)", gcomp_labels)
+
 # 9c/9d. supervised, 5-fold CV
 cv = StratifiedKFold(5, shuffle=True, random_state=0)
 glp_score, sgc_score = np.zeros(len(X)), np.zeros(len(X))
@@ -430,6 +440,7 @@ methods = [
     (tsne_dbscan_labels, "t-SNE + DBSCAN (labels)", "F1: {:.4f}".format(tsne_dbscan_f1)),
     (gdens_labels, "Graph: smoothed density", "F1: {:.4f}".format(gdens_f1)),
     (gspec_labels, "Graph: spectral cut", "F1: {:.4f}".format(gspec_f1)),
+    (gcomp_labels, "Graph: connected components", "F1: {:.4f}".format(gcomp_f1)),
     (glp_labels, "Graph: label spreading (labels)", "F1: {:.4f}".format(glp_f1)),
     (sgc_labels, "Graph: SGC (labels)", "F1: {:.4f}".format(sgc_f1)),
     (true_labels, "Ground Truth", "Reference")
@@ -505,9 +516,10 @@ results_data = {
     'Method': ['GMM (Full)', 'Spectral Clustering', 'Kernel K-Means', 
                'Isolation Forest', f'GMM ({best_cov})', 'Soft GMM + Threshold', 'Ensemble',
                't-SNE + k-NN density', 't-SNE + DBSCAN (uses labels)',
-               'Graph: smoothed density', 'Graph: spectral cut', 'Graph: label spreading (uses labels)', 'Graph: SGC (uses labels)'],
+               'Graph: smoothed density', 'Graph: spectral cut', 'Graph: connected components',
+               'Graph: label spreading (uses labels)', 'Graph: SGC (uses labels)'],
     'F1 Score': [gmm_f1, spectral_f1, kernel_f1, iso_f1, best_f1, density_f1_opt, ensemble_f1,
-                 tsne_density_f1, tsne_dbscan_f1, gdens_f1, gspec_f1, glp_f1, sgc_f1],
+                 tsne_density_f1, tsne_dbscan_f1, gdens_f1, gspec_f1, gcomp_f1, glp_f1, sgc_f1],
     'Precision': [
         precision_score(true_labels, gmm_labels),
         precision_score(true_labels, spectral_labels),
@@ -518,7 +530,7 @@ results_data = {
         precision_score(true_labels, ensemble_labels),
         precision_score(true_labels, tsne_density_labels),
         precision_score(true_labels, tsne_dbscan_labels, zero_division=0),
-        *[precision_score(true_labels, l, zero_division=0) for l in (gdens_labels, gspec_labels, glp_labels, sgc_labels)]
+        *[precision_score(true_labels, l, zero_division=0) for l in (gdens_labels, gspec_labels, gcomp_labels, glp_labels, sgc_labels)]
     ],
     'Recall': [
         recall_score(true_labels, gmm_labels),
@@ -530,7 +542,7 @@ results_data = {
         recall_score(true_labels, ensemble_labels),
         recall_score(true_labels, tsne_density_labels),
         recall_score(true_labels, tsne_dbscan_labels),
-        *[recall_score(true_labels, l) for l in (gdens_labels, gspec_labels, glp_labels, sgc_labels)]
+        *[recall_score(true_labels, l) for l in (gdens_labels, gspec_labels, gcomp_labels, glp_labels, sgc_labels)]
     ]
 }
 

@@ -1,6 +1,6 @@
 # Overlay Problem: separating overlapping red and green points
 
-**[English](#english) · [Русский](#русский)**
+**[English](#english) · [Русский](#русский)** · [History of the experiments](#history) · [История экспериментов](#история)
 
 **Interactive site / Интерактивный сайт:** <https://d2718281828nis.github.io/ML-overlay-problem/>
 (`?lang=ru` / `?lang=en`, `?data=orig` / `dist` / `custom`)
@@ -29,6 +29,8 @@ Main findings:
 |---|---|---|
 | `df_red_green_overlay.csv` | Original data (columns X, Y, Color, Type; Type is redundant: cross = green, point = red) | 1,672 (227 red) |
 | `df_red_green_distinct.csv` | `make_distinct_dataset.py` with default options | 1,704 (227 red) |
+| `df_red_green_chains.csv` | `make_distinct_dataset.py --green chains --red chains`: the example where an unsupervised graph method wins (see below) | 1,672 (227 red) |
+| `df_red_green_circles.csv` | `... --green chains --red chains --chain-shape circle --seed 5`: the same idea with chains shaped as closed circles | 1,671 (227 red) |
 
 How the distinct dataset is generated:
 
@@ -45,7 +47,7 @@ python make_distinct_dataset.py --green gaussian --green-sigma 400 --red ring --
 python make_distinct_dataset.py --help        # all options
 ```
 
-Options: `--green uniform|gaussian`, `--n-green`, `--green-sigma`, `--green-center X Y`, `--red ring|gaussian|uniform`, `--n-red`, `--center X Y`, `--radius`, `--sigma`, `--clip-red`, `--seed`, `--source`, `--out`. Run with no options, the script reproduces the committed file byte for byte.
+Options: `--green uniform|gaussian|chains`, `--n-green`, `--green-sigma`, `--green-center X Y`, `--red ring|gaussian|uniform|chains`, `--n-red`, `--red-chains`, `--chain-len MIN MAX`, `--step`, `--gap`, `--turn`, `--chain-shape walk|circle`, `--center X Y`, `--radius`, `--sigma`, `--clip-red`, `--seed`, `--source`, `--out`. Run with no options, the script reproduces the committed file byte for byte.
 
 ### The interactive site (`docs/index.html`)
 
@@ -87,7 +89,7 @@ The lab and the designer are synchronised:
 | Global clustering | K-Means, 2-component GMM, **ring + uniform mixture (EM)**, Gaussian + uniform mixture (EM), Fuzzy C-Means |
 | Density | DBSCAN, k-NN density, k-NN sparsity, LNND, LOF |
 | Embedding | t-SNE + k-NN density |
-| Graphs | k-NN graph with GCN-style smoothed density, spectral cut of the graph |
+| Graphs | **connected components** of a small-k k-NN graph, k-NN graph with GCN-style smoothed density, spectral cut of the graph |
 
 **Supervised (uses the true colours):**
 
@@ -117,6 +119,50 @@ The lab and the designer are synchronised:
 | k-NN classifier | yes | 0.41 | 0.63 |
 | Bayes optimum | yes (generator) | – | 0.79 |
 
+#### When does an unsupervised graph method win? (`df_red_green_chains.csv`)
+
+A graph only sees X, Y, so "connectivity" must show up in the geometry as gaps along a structure. The example satisfies four conditions:
+
+1. **Overlay:** red is spread over the same area as green. The class centres differ by 0.02–0.05σ and the spreads by 10–16%.
+2. **The same local density:** every point lies on a chain with a 12 px step, so the median distance to the 2nd neighbour is 12.2 px for both colours.
+3. **The same local shape:** every point is "a piece of a chain".
+4. **Only global connectivity differs:** red = 6 long chains (~38 points each), green ≈ 95 short chains (12–20 points). Different chains stay ≥ 30 px apart.
+
+| Method | F1 |
+|---|---|
+| **Graph: connected components (k-NN graph, k = 2), no labels** | **1.000** |
+| every other unsupervised method (density, LOF, K-Means, GMM, EM models, t-SNE, spectral cut, Louvain, DBSCAN) | 0.03–0.25 (baseline 0.239) |
+| supervised k-NN classifier / label propagation / SGC / logistic regression | 0.90 / 0.83 / 0.45 / 0.43 |
+
+Across seeds 1–5 the graph method gets 1.000 in four runs and 0.912 in one. k matters: a chain point has 2 neighbours, so k = 2 keeps chains apart, while k ≥ 3 adds edges between chains and the components merge. On the site, press **"Graph example: chains"** in the designer.
+
+#### Variant: chains shaped as circles (`df_red_green_circles.csv`)
+
+`python make_distinct_dataset.py --green chains --red chains --chain-shape circle --seed 5`. Red = 6 closed circles of ~38 points (radius ≈ 73 px), green ≈ 90 small circles of 12–20 points (radius 23–38 px). The step (12 px) and the gap between circles (≥ 30 px) are the same as for the walk chains.
+
+| Seed | Overlay (max \|Δmean\|/σ) | Graph: connected components | Best non-graph unsupervised (k-NN sparsity) | Supervised k-NN |
+|---|---|---|---|---|
+| 1 | 0.51 | **1.000** | 0.643 | 0.991 |
+| 2 | 0.38 | **1.000** | 0.564 | 0.996 |
+| 3 | 0.40 | **1.000** | 0.811 | 1.000 |
+| 4 | 0.70 | **1.000** | 0.696 | 1.000 |
+| 5 (saved file) | **0.19** | **1.000** | 0.753 | 1.000 |
+| 42 | 0.67 | **1.000** | 0.599 | 0.991 |
+
+- **Cleaner for the graph:** closed loops have no loose ends, so connected components work at k = 2 *and* k = 3, and Louvain communities also reach 1.000.
+- **Less strict as a test:** a small circle keeps all its points within one diameter (46–76 px), while a large circle is flatter. Local statistics at k ≥ 5 therefore differ, so k-NN sparsity reaches 0.47–0.81 and supervised k-NN about 1.0. The walk chains remain the stricter example, where *only* connectivity differs.
+- **The overlay depends on the seed** (0.19–0.70σ), because large circles fit only in the wide parts of the area. Seed 5 has the best overlay. The generator now gives up with a warning when the area is full, instead of hanging.
+
+#### Why the graph works so well here
+
+Illustrated step by step, with seven figures: **[illustrations/README.md](illustrations/README.md)**.
+
+1. **The colour is a property of the whole chain, not of a neighbourhood.** Locally every point looks the same: two neighbours 12 px away and nothing else within 30 px. Any method that looks at a fixed neighbourhood sees the same picture for red and green: k-NN density, LOF, K-Means, a classifier on X, Y, even supervised k-NN with 15 neighbours. The difference (38 points in the chain vs. 12–20) only exists at the scale of the whole chain.
+2. **With k = 2 the graph reproduces the true structure exactly.** The step (12 px) is smaller than the gap between chains (30 px), so a point's two nearest neighbours are always its own chain neighbours. 100% of the edges connect points of the same chain, compared with 60% on the ring dataset and 32% on the original data. The graph's connected components are therefore exactly the chains.
+3. **Connected components carry information arbitrarily far without averaging it away.** Following edges is transitive: a point in the middle of a 38-point chain is linked to all 38 points, however far away they are. GCN-style averaging (smoothed density, SGC) instead mixes values and fades after a few hops. That is why the component search gets 1.000, while label propagation (supervised) gets 0.83 and SGC 0.45.
+4. **Only the right k works.** A chain point has exactly 2 neighbours, so k = 2 matches the structure. At k ≥ 3, extra edges jump to other chains and the components merge (walk chains: k = 3 → 0.28, k = 5 → 0.12). Closed circles tolerate k = 3 because the extra edges stay inside the circle.
+5. **The general rule from all experiments:** a graph method beats local methods only when (a) the edges are *homophilous* (neighbours share the class) and (b) the class depends on *long-range structure* (paths, components, communities) rather than on local density. On the original and ring data (a) fails, so graphs at best match k-NN. On the chains both hold, so the graph wins outright.
+
 #### Running and publishing
 
 - **Locally:** open `docs/index.html` in a browser. It works from `file://` too, including the t-SNE worker.
@@ -129,11 +175,12 @@ The lab and the designer are synchronised:
 |---|---|
 | `docs/index.html` | The interactive site described above |
 | `case_study-unsupervised-overlay-problem.ipynb` | Main study (Colab-friendly). It runs top to bottom on `df_red_green_distinct.csv` and has saved outputs. To use the original data, change `DATA_FILE` in the load cell. |
-| `overlay_clustering_advanced.py` | Nine method families with F1, precision, recall, figures and a summary table. Includes **t-SNE** (method 8) and **graph methods** (method 9). |
+| `overlay_clustering_advanced.py` | Nine method families with F1, precision, recall, figures and a summary table. Includes **t-SNE** (method 8) and **graph methods** (method 9, with connected components as 9e). |
 | `overlay_advanced_tuning.py` | GMM BIC/AIC, spectral gamma search, LOF weighting, multi-metric spectral clustering, bootstrap consensus. Runs in about 8 s. |
 | `quickstart_colab.py` | Copy-paste Colab template: GMM + threshold search. The threshold is tuned on true labels, so it is supervised. |
 | `make_distinct_dataset.py` | Generator for datasets with chosen red and green distributions |
-| `df_red_green_overlay.csv`, `df_red_green_distinct.csv` | Datasets |
+| `illustrations/` | Seven figures and an EN/RU explanation of why the graph method wins on the chain datasets (`make_illustrations.py` regenerates them) |
+| `df_red_green_overlay.csv`, `df_red_green_distinct.csv`, `df_red_green_chains.csv`, `df_red_green_circles.csv` | Datasets |
 
 Run the scripts on any dataset:
 
@@ -144,6 +191,28 @@ OVERLAY_DATA=my_data.csv python overlay_advanced_tuning.py
 ```
 
 Requirements: Python 3, numpy, pandas, scipy, scikit-learn, matplotlib, seaborn. The notebook also uses networkx, torch and tqdm.
+
+<a id="history"></a>
+
+### History of the experiments
+
+How the project got here, step by step. All numbers are F1 for the red class.
+
+| # | Step | What we found |
+|---|---|---|
+| 1 | Original notebook: 15+ methods (DBSCAN, agglomerative, FCM, t-SNE, spectral, ICA, KDE, hyperbolic graph/GCN, LNND, OCSVM, supervised LogReg/RF/SVM) | Most scores 0.22–0.26, and **0.2391 is exactly the F1 of "everything red"** (2p/(1+p)). Best label-free: LNND 0.295. Supervised SVM: 0.41. |
+| 2 | Analysis of the data | Red and green share one distribution (means differ by 1–7% of σ). The only signal is local sparsity: the plain k-NN distance gives 0.39 (k = 10) to 0.46 (k = 5) without labels. |
+| 3 | Audit of the code | Fixed a spectral step that hung, a 145M-iteration loop, an LOF that was never fitted, `fit_predict_proba`, notebook cell order, `TSNE(n_iter)`, `get_cmap`, an unseeded GCN, and unstable cluster→colour orientation. |
+| 4 | Distinct dataset v1: red Gaussian blob (σ = 90 px) on uniform green | Density works: k-NN density 0.73, and the Gaussian + uniform EM reaches the Bayes level of 0.74–0.77. t-SNE + DBSCAN reaches 0.64 only when labels choose the cluster. |
+| 5 | Distinct v2: red noisy ring (R = 350, σ = 15) | Ring + uniform EM 0.72 without labels (Bayes 0.79); k-NN density 0.62; t-SNE + DBSCAN 0.39. |
+| 6 | Bug fix: red was forced inside the green area | A ring near the edge collapsed into the overlap. Red now follows its own distribution; `--clip-red` restores the old behaviour. |
+| 7 | Interactive site: bilingual, with the dataset designer | Every method runs live in the browser; the designer and the lab are synchronised. |
+| 8 | t-SNE as a classifier (exact t-SNE in a Web Worker) | Weak: t-SNE evens out density (k-NN density on the t-SNE map 0.31 vs. 0.62 on X–Y), and a lower perplexity is even worse. |
+| 9 | Split into supervised / unsupervised; logistic regression and QDA added | Polynomial logistic regression reaches 0.75 on the ring, but only with weak regularisation (C = 1 gives 0.07). QDA gets 0.16, because it is the wrong model. |
+| 10 | Graph methods from [ML-MachineLearning-Graphs](https://github.com/D2718281828nis/ML-MachineLearning-Graphs) | Smoothed density 0.64, label propagation 0.63, SGC 0.66, spectral cut 0.18. The repository's "type-based edges" were removed, because they leak the colour. |
+| 11 | Why graphs ≈ k-NN on these datasets | Edges mix the colours (only 60% / 32% of a red node's edges lead to red), so propagation averages red with green. SGC without the graph: 0.744; with 4 hops: 0.648. |
+| 12 | An example where graphs win: chains (random walks) | Connected components 1.000; every other unsupervised method ≤ 0.25; supervised k-NN 0.83. |
+| 13 | The same with circles | Connected components 1.000 on every seed, but small circles leak a local signal: k-NN sparsity 0.47–0.81, supervised k-NN ≈ 1.0. |
 
 ### Lessons
 
@@ -178,6 +247,8 @@ Requirements: Python 3, numpy, pandas, scipy, scikit-learn, matplotlib, seaborn.
 |---|---|---|
 | `df_red_green_overlay.csv` | Исходные данные (столбцы X, Y, Color, Type; Type избыточен: cross = зелёный, point = красный) | 1 672 (227 красных) |
 | `df_red_green_distinct.csv` | `make_distinct_dataset.py` с параметрами по умолчанию | 1 704 (227 красных) |
+| `df_red_green_chains.csv` | `make_distinct_dataset.py --green chains --red chains`: пример, где побеждает метод на графе без учителя (см. ниже) | 1 672 (227 красных) |
+| `df_red_green_circles.csv` | `... --green chains --red chains --chain-shape circle --seed 5`: та же идея, но цепочки — замкнутые окружности | 1 671 (227 красных) |
 
 Как создаётся различимый датасет:
 
@@ -236,7 +307,7 @@ python make_distinct_dataset.py --help        # все параметры
 | Глобальная кластеризация | K-Means, GMM из 2 компонент, **смесь «кольцо + фон» (EM)**, смесь «гаусс + фон» (EM), Fuzzy C-Means |
 | Плотность | DBSCAN, плотность k-NN, разреженность k-NN, LNND, LOF |
 | Вложение | t-SNE + плотность k-NN |
-| Графы | граф k-NN со сглаженной (как в GCN) плотностью, спектральный разрез графа |
+| Графы | **компоненты связности** графа k-NN с малым k, граф k-NN со сглаженной (как в GCN) плотностью, спектральный разрез графа |
 
 **С учителем (использует истинные цвета):**
 
@@ -266,6 +337,50 @@ python make_distinct_dataset.py --help        # все параметры
 | Классификатор k-NN | да | 0,41 | 0,63 |
 | Байесовский оптимум | да (генератор) | – | 0,79 |
 
+#### Когда побеждает метод на графе без учителя? (`df_red_green_chains.csv`)
+
+Граф видит только X, Y, поэтому «связность» должна проявляться в геометрии — как промежутки вдоль структуры. Пример выполняет четыре условия:
+
+1. **Наложение:** красные распределены по той же области, что и зелёные. Центры классов отличаются на 0,02–0,05σ, разброс — на 10–16%.
+2. **Одинаковая локальная плотность:** каждая точка лежит на цепочке с шагом 12 px, медиана расстояния до 2-го соседа — 12,2 px у обоих цветов.
+3. **Одинаковая локальная форма:** каждая точка — «кусочек цепочки».
+4. **Отличается только глобальная связность:** красные — 6 длинных цепочек (~38 точек), зелёные — около 95 коротких (12–20 точек). Разные цепочки держатся не ближе 30 px.
+
+| Метод | F1 |
+|---|---|
+| **Граф: компоненты связности (граф k-NN, k = 2), без меток** | **1,000** |
+| все остальные методы без учителя (плотность, LOF, K-Means, GMM, модели EM, t-SNE, спектральный разрез, Louvain, DBSCAN) | 0,03–0,25 (базовый 0,239) |
+| с учителем: классификатор k-NN / распространение меток / SGC / логистическая регрессия | 0,90 / 0,83 / 0,45 / 0,43 |
+
+На зёрнах 1–5 метод на графе даёт 1,000 в четырёх запусках и 0,912 в одном. Важно k: у точки цепочки 2 соседа, поэтому k = 2 не соединяет цепочки, а при k ≥ 3 появляются рёбра между цепочками и компоненты сливаются. На сайте нажмите **«Пример для графа: цепочки»** в конструкторе.
+
+#### Вариант: цепочки в форме окружностей (`df_red_green_circles.csv`)
+
+`python make_distinct_dataset.py --green chains --red chains --chain-shape circle --seed 5`. Красные — 6 замкнутых окружностей по ~38 точек (радиус ≈ 73 px), зелёные — около 90 маленьких окружностей по 12–20 точек (радиус 23–38 px). Шаг (12 px) и промежуток между окружностями (≥ 30 px) те же, что у цепочек-блужданий.
+
+| Зерно | Наложение (max \|Δсреднего\|/σ) | Граф: компоненты связности | Лучший метод без учителя не на графе (разреженность k-NN) | k-NN с учителем |
+|---|---|---|---|---|
+| 1 | 0,51 | **1,000** | 0,643 | 0,991 |
+| 2 | 0,38 | **1,000** | 0,564 | 0,996 |
+| 3 | 0,40 | **1,000** | 0,811 | 1,000 |
+| 4 | 0,70 | **1,000** | 0,696 | 1,000 |
+| 5 (сохранённый файл) | **0,19** | **1,000** | 0,753 | 1,000 |
+| 42 | 0,67 | **1,000** | 0,599 | 0,991 |
+
+- **Для графа ещё проще:** у замкнутой петли нет свободных концов, поэтому компоненты связности работают и при k = 2, *и* при k = 3, а сообщества Louvain тоже дают 1,000.
+- **Как тест — менее строгий:** маленькая окружность держит все свои точки в пределах одного диаметра (46–76 px), а большая более плоская. Локальная статистика при k ≥ 5 поэтому отличается: разреженность k-NN даёт 0,47–0,81, k-NN с учителем — около 1,0. Цепочки-блуждания остаются более строгим примером, где отличается *только* связность.
+- **Наложение зависит от зерна** (0,19–0,70σ): большие окружности помещаются только в широких частях области. У зерна 5 наложение лучшее. Генератор теперь останавливается с предупреждением, когда область заполнена, а не зависает.
+
+#### Почему граф здесь работает так хорошо
+
+Пошагово, с семью рисунками: **[illustrations/README.md](illustrations/README.md#русский)**.
+
+1. **Цвет — свойство всей цепочки, а не окрестности.** Локально все точки выглядят одинаково: два соседа в 12 px и больше ничего в радиусе 30 px. Любой метод, смотрящий на фиксированную окрестность, видит для красных и зелёных одну и ту же картину: плотность k-NN, LOF, K-Means, классификатор на X, Y, даже k-NN с учителем по 15 соседям. Разница (38 точек в цепочке против 12–20) существует только в масштабе всей цепочки.
+2. **При k = 2 граф точно воспроизводит истинную структуру.** Шаг (12 px) меньше промежутка между цепочками (30 px), поэтому два ближайших соседа точки — всегда её соседи по цепочке. 100% рёбер соединяют точки одной цепочки, против 60% на датасете с кольцом и 32% на исходных данных. Компоненты связности графа поэтому в точности совпадают с цепочками.
+3. **Компоненты связности переносят информацию сколь угодно далеко, не усредняя её.** Переход по рёбрам транзитивен: точка в середине цепочки из 38 точек связана со всеми 38, как бы далеко они ни были. Усреднение в духе GCN (сглаженная плотность, SGC), наоборот, смешивает значения и затухает через несколько шагов. Поэтому поиск компонент даёт 1,000, а распространение меток (с учителем) — 0,83 и SGC — 0,45.
+4. **Работает только правильное k.** У точки цепочки ровно 2 соседа, поэтому k = 2 совпадает со структурой. При k ≥ 3 лишние рёбра перескакивают на другие цепочки, и компоненты сливаются (цепочки-блуждания: k = 3 → 0,28, k = 5 → 0,12). Замкнутые окружности выдерживают k = 3, потому что лишние рёбра остаются внутри окружности.
+5. **Общее правило по всем экспериментам:** метод на графе обгоняет локальные методы, только когда (а) рёбра *гомофильны* (соседи одного класса) и (б) класс определяется *дальней структурой* (пути, компоненты, сообщества), а не локальной плотностью. На исходных данных и на кольце не выполняется (а), поэтому графы в лучшем случае равны k-NN. На цепочках выполняются оба условия, и граф выигрывает безоговорочно.
+
 #### Запуск и публикация
 
 - **Локально:** откройте `docs/index.html` в браузере. Работает и с `file://`, включая t-SNE в фоновом потоке.
@@ -278,11 +393,12 @@ python make_distinct_dataset.py --help        # все параметры
 |---|---|
 | `docs/index.html` | Интерактивный сайт, описанный выше |
 | `case_study-unsupervised-overlay-problem.ipynb` | Основное исследование (для Colab). Выполняется целиком на `df_red_green_distinct.csv`, результаты сохранены. Для исходных данных поменяйте `DATA_FILE` в ячейке загрузки. |
-| `overlay_clustering_advanced.py` | Девять семейств методов с F1, точностью, полнотой, графиками и итоговой таблицей. Включает **t-SNE** (метод 8) и **методы на графах** (метод 9). |
+| `overlay_clustering_advanced.py` | Девять семейств методов с F1, точностью, полнотой, графиками и итоговой таблицей. Включает **t-SNE** (метод 8) и **методы на графах** (метод 9, компоненты связности — 9e). |
 | `overlay_advanced_tuning.py` | BIC/AIC для GMM, подбор gamma для спектральной кластеризации, веса LOF, спектральная кластеризация с разными метриками, бутстреп-консенсус. Работает около 8 с. |
 | `quickstart_colab.py` | Шаблон для Colab: GMM + подбор порога. Порог подбирается по истинным меткам, то есть это уже обучение с учителем. |
 | `make_distinct_dataset.py` | Генератор датасетов с выбранными распределениями красных и зелёных |
-| `df_red_green_overlay.csv`, `df_red_green_distinct.csv` | Датасеты |
+| `illustrations/` | Семь рисунков и объяснение на EN/RU, почему метод на графе побеждает на датасетах с цепочками (`make_illustrations.py` пересоздаёт их) |
+| `df_red_green_overlay.csv`, `df_red_green_distinct.csv`, `df_red_green_chains.csv`, `df_red_green_circles.csv` | Датасеты |
 
 Запуск скриптов на любом датасете:
 
@@ -293,6 +409,28 @@ OVERLAY_DATA=my_data.csv python overlay_advanced_tuning.py
 ```
 
 Нужно: Python 3, numpy, pandas, scipy, scikit-learn, matplotlib, seaborn. Ноутбуку также нужны networkx, torch и tqdm.
+
+<a id="история"></a>
+
+### История экспериментов
+
+Как проект пришёл к текущему состоянию, шаг за шагом. Все числа — F1 для красного класса.
+
+| № | Шаг | Что выяснилось |
+|---|---|---|
+| 1 | Исходный ноутбук: 15+ методов (DBSCAN, агломеративная, FCM, t-SNE, спектральная, ICA, KDE, гиперболический граф/GCN, LNND, OCSVM, LogReg/RF/SVM с учителем) | Большинство результатов 0,22–0,26, и **0,2391 — это ровно F1 для «все красные»** (2p/(1+p)). Лучший без меток: LNND 0,295. SVM с учителем: 0,41. |
+| 2 | Анализ данных | У красных и зелёных одно распределение (средние отличаются на 1–7% σ). Единственный сигнал — локальная разреженность: простое расстояние k-NN даёт без меток от 0,39 (k = 10) до 0,46 (k = 5). |
+| 3 | Аудит кода | Исправлены: зависавший спектральный шаг, цикл на 145 млн итераций, LOF без fit, `fit_predict_proba`, порядок ячеек ноутбука, `TSNE(n_iter)`, `get_cmap`, GCN без зерна, неустойчивое сопоставление «кластер → цвет». |
+| 4 | Различимый датасет v1: красное гауссово облако (σ = 90 px) на равномерном зелёном | Плотность работает: плотность k-NN 0,73, а EM «гаусс + фон» достигает байесовского уровня 0,74–0,77. t-SNE + DBSCAN даёт 0,64, только когда кластер выбирают метки. |
+| 5 | Различимый v2: красное зашумлённое кольцо (R = 350, σ = 15) | EM «кольцо + фон» без меток 0,72 (байес 0,79); плотность k-NN 0,62; t-SNE + DBSCAN 0,39. |
+| 6 | Исправление: красные насильно удерживались внутри зелёной области | Кольцо у края схлопывалось в зону перекрытия. Теперь красные следуют своему распределению; `--clip-red` возвращает старое поведение. |
+| 7 | Интерактивный сайт: двуязычный, с конструктором датасета | Все методы выполняются прямо в браузере; конструктор и лаборатория синхронизированы. |
+| 8 | t-SNE как классификатор (точный t-SNE в Web Worker) | Слабый: t-SNE выравнивает плотность (плотность k-NN на карте t-SNE 0,31 против 0,62 на X–Y), а меньшая perplexity ещё хуже. |
+| 9 | Разделение на «с учителем / без учителя»; добавлены логистическая регрессия и QDA | Полиномиальная логистическая регрессия даёт 0,75 на кольце, но только при слабой регуляризации (при C = 1 — 0,07). QDA — 0,16, потому что это неверная модель. |
+| 10 | Методы на графах из [ML-MachineLearning-Graphs](https://github.com/D2718281828nis/ML-MachineLearning-Graphs) | Сглаженная плотность 0,64, распространение меток 0,63, SGC 0,66, спектральный разрез 0,18. «Рёбра по Type» из того репозитория убраны, потому что выдают цвет. |
+| 11 | Почему здесь графы ≈ k-NN | Рёбра смешивают цвета (лишь 60% / 32% рёбер красной точки ведут к красной), поэтому распространение усредняет красное с зелёным. SGC без графа: 0,744; с 4 шагами: 0,648. |
+| 12 | Пример, где побеждают графы: цепочки (случайные блуждания) | Компоненты связности 1,000; все остальные методы без учителя ≤ 0,25; k-NN с учителем 0,83. |
+| 13 | То же с окружностями | Компоненты связности 1,000 на всех зёрнах, но маленькие окружности дают локальный сигнал: разреженность k-NN 0,47–0,81, k-NN с учителем ≈ 1,0. |
 
 ### Уроки
 
