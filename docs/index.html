@@ -73,6 +73,12 @@ th{font-size:12.5px;color:var(--muted);font-weight:600}
 .lab{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
 @media(max-width:900px){.lab{grid-template-columns:1fr}}
 .methods{display:flex;flex-direction:column;gap:6px}
+/* wide screens: the method panel sticks below the top bar; the method list scrolls on its own and the parameter sliders stay pinned at the bottom */
+@media(min-width:901px){
+  .lab>.side{position:sticky;top:var(--navh,60px);max-height:calc(100vh - var(--navh,60px) - 12px);display:flex;flex-direction:column;overflow:hidden}
+  .side .methods{flex:1 1 auto;min-height:140px;overflow-y:auto;overscroll-behavior:contain;padding-right:6px;margin-right:-6px;scrollbar-width:thin}
+  .side #controls:not(:empty){flex:0 1 auto;max-height:55%;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid var(--border);margin-top:10px;padding:2px 6px 2px 0;margin-right:-6px;scrollbar-width:thin}
+}
 .mbtn{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:9px;padding:9px 11px;font-size:13.5px;cursor:pointer}
 .mbtn:hover{border-color:var(--accent)}
 .mbtn.on{border-color:var(--accent);background:var(--accent-soft)}
@@ -253,7 +259,7 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
   <h2 data-t="lab_h"></h2>
   <p class="sub" data-t="lab_sub"></p>
   <div class="lab">
-    <div class="card">
+    <div class="card side">
       <div class="methods" id="methods"></div>
       <div id="controls"></div>
     </div>
@@ -740,6 +746,7 @@ function makeCustom(){if(DATASETS.custom&&DATASETS.custom.workers)DATASETS.custo
 function customDesc(P){P=P||CP;const red=P.red==="chains"?T(P.shape==="circle"?"dd_red_circles":"dd_red_chains",{c:P.rc}):P.red==="ring"?T("dd_red_ring",{R:P.R,s:P.rs,cx:P.cx,cy:P.cy}):P.red==="gaussian"?T("dd_red_gauss",{s:P.rs,cx:P.cx,cy:P.cy}):T("dd_red_uniform");
   return red+"; "+(P.green==="uniform"?T("dd_green_uniform"):P.green==="chains"?T(P.shape==="circle"?"dd_green_circles":"dd_green_chains"):T("dd_green_gauss",{s:P.gs}))}
 
+{const nv=document.querySelector("nav.top"),setNav=()=>document.documentElement.style.setProperty("--navh",(nv?nv.offsetHeight:52)+8+"px");setNav();addEventListener("resize",setNav)}
 if(INIT_DS==="custom")makeCustom();
 useDataset(INIT_DS);
 
@@ -1130,7 +1137,7 @@ function predOf(r){if(r.pending)return new Uint8Array(N);if(r.pred)return r.pred
 
 const mEl=document.getElementById("methods");
 function bestF1(id){const r=runMethod(id);if(r.pending)return NaN;if(r.pred)return confusion(r.pred).f;return r.curve.f[Math.round(PR*N)]}
-function renderMethods(){const cur=METHODS.find(x=>x.id===state.m),cs=caseOf(cur);
+function renderMethods(){const cur=METHODS.find(x=>x.id===state.m),cs=caseOf(cur),keep=mEl.scrollTop;
   mEl.innerHTML=`<div class="seg caseSeg">${["unsup","sup"].map(c=>`<button data-c="${c}" class="${c===cs?"on":""}">${T("case_"+c)}</button>`).join("")}</div><div class="hint casehint">${T("case_"+cs+"_h")}</div>`;
   mEl.querySelectorAll(".caseSeg button").forEach(b=>b.onclick=()=>{if(b.dataset.c===cs)return;state.m=b.dataset.c==="sup"?"lr":defaultMethod(DS);const m=METHODS.find(x=>x.id===state.m);if(m.type==="score")state.frac=PR;renderMethods();renderControls();update()});
   let g="";
@@ -1138,7 +1145,9 @@ function renderMethods(){const cur=METHODS.find(x=>x.id===state.m),cs=caseOf(cur
     const b=document.createElement("button");b.className="mbtn"+(m.id===state.m?" on":"");
     b.innerHTML=`<span class="mt"><span>${mname(m)}</span><span class="f" id="mf_${m.id}"></span></span><span class="ms">${T("ms_"+m.id)}</span>`;
     b.onclick=()=>{state.m=m.id;if(m.type==="score")state.frac=PR;renderMethods();renderControls();update()};mEl.appendChild(b)});
-  METHODS.forEach(m=>{const k=DS+m.id+JSON.stringify(state.params[m.id]);if(cache[k]){const el=document.getElementById("mf_"+m.id);if(el)el.textContent=f3(bestF1(m.id))}})}
+  METHODS.forEach(m=>{const k=DS+m.id+JSON.stringify(state.params[m.id]);if(cache[k]){const el=document.getElementById("mf_"+m.id);if(el)el.textContent=f3(bestF1(m.id))}});
+  mEl.scrollTop=keep;if(mEl.dataset.sel!==state.m){mEl.dataset.sel=state.m;   // reveal a newly selected method after the sliders below have been drawn
+    requestAnimationFrame(()=>{const on=mEl.querySelector(".mbtn.on");if(!on)return;const a=on.offsetTop-mEl.offsetTop,b=a+on.offsetHeight;if(a<mEl.scrollTop)mEl.scrollTop=a-8;else if(b>mEl.scrollTop+mEl.clientHeight)mEl.scrollTop=b-mEl.clientHeight+8})}}
 function renderControls(){const m=METHODS.find(x=>x.id===state.m),c=document.getElementById("controls");c.innerHTML="";
   m.params.forEach(p=>{const d=document.createElement("div");d.className="ctl";const v=state.params[m.id][p.k];
     d.innerHTML=`<label>${T(p.l)} <b>${p.names?T(p.names[v]):v}</b></label><input type="range" min="${p.min}" max="${p.max}" step="${p.step||1}" value="${v}">`;
