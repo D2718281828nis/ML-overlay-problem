@@ -374,6 +374,7 @@ footer{padding:36px 0 56px;color:var(--faint);font-size:13px;border-top:1px soli
     <div class="card"><h3>case_study-unsupervised-overlay-problem.ipynb</h3><p data-t="repo_nb"></p><p class="fixed" data-t="repo_nb_fix"></p></div>
     <div class="card"><h3>make_distinct_dataset.py → df_red_green_distinct.csv</h3><p data-t="repo_gen"></p></div>
     <div class="card"><h3>overlay_clustering_advanced.py</h3><p data-t="repo_adv"></p><p class="fixed" data-t="repo_adv_fix"></p></div>
+    <div class="card"><h3>fuzzy_structural.py</h3><p data-t="repo_fz"></p></div>
     <div class="card"><h3>overlay_advanced_tuning.py</h3><p data-t="repo_tune"></p><p class="fixed" data-t="repo_tune_fix"></p></div>
     <div class="card"><h3>quickstart_colab.py</h3><p data-t="repo_qs"></p><p class="issue" data-t="repo_qs_issue"></p></div>
     <div class="card"><h3>README.md</h3><p data-t="repo_readme"></p><p class="issue" data-t="repo_readme_issue"></p></div>
@@ -468,6 +469,13 @@ md_base:"Predict every point red. This is the floor every method must beat: F1 =
 md_km:"K-Means splits the plane with one straight line between two centroids. The classes share the same centre (on the distinct data the ring is centred in the cloud), so the cut is geometric and each half holds about the same share of reds. Cluster-to-colour mapping is chosen with labels, as in the notebook.",
 md_gmm:"The README's top recommendation. EM fits two full-covariance Gaussians. Neither the original cloud nor a ring is “two blobs”, so it finds two halves of space. Ellipses show 1σ and 2σ. The F1 curve stays near the random line.",
 md_ring:"EM for a mixture of <b>a noisy circle plus a uniform background</b> over the footprint: the same model that generated the distinct data. No labels are used. A coarse grid search picks the start, then each step re-fits the circle by weighted least squares (Kåsa fit) and updates R, σ and the red share. The fitted circle and its ±2σ band are drawn. On the original data no ring exists, so it latches onto noise.",
+mn_sfz:"Structural fuzzy clustering",ms_sfz:"Fuzzy sets learned on sparsity, density and chain size instead of X, Y.",
+md_sfz:"<b>Fuzzy clustering on structure, not position.</b> Each point gets four label-free features: distance to the 5th and 15th neighbour, the size of its chain (connected component of the k = 2 graph) and how line-like its neighbourhood is. Each of the two clusters fits its own <b>membership function</b> per feature to its fuzzy-weighted distribution (Gaussian, asymmetric triangle, trapezoid, bell, or the smoothed histogram itself) and re-fits it every iteration. Feature weights are learned without labels from how well the clusters separate on each feature. <i>Set width</i> scales every set, <i>m</i> is the FCM fuzzifier, <i>β</i> sharpens the feature weights (0 = equal). Red = the smaller cluster. Python: <code>fuzzy_structural.py</code>. Note: the default width was chosen by looking at F1, so it is not fully label-free.",
+note_sfz:"feature weights: {w} · red cluster {pi} · membership > 0.5 flags {q} (F1 {f})",
+p_shape:"Membership shape",p_width:"Set width",p_beta:"Feature-weight β",
+sh_gaussian:"Gaussian",sh_triangular:"triangle",sh_trapezoid:"trapezoid",sh_bell:"bell",sh_empirical:"empirical (histogram)",
+fz_sparse:"sparse",fz_density:"density",fz_chain:"chain",fz_linear:"linear",
+repo_fz:"Structural fuzzy clustering: per-cluster membership functions (Gaussian, triangle, trapezoid, bell, empirical) fitted to fuzzy-weighted distributions of sparsity, density, chain size and anisotropy, with label-free feature weights. Original 0.43, ring 0.49, chains and circles 1.000. <code>--sweep</code> prints shape × width × m.",
 md_fcm:"Soft K-Means, ported from the notebook's NumPy version. Memberships are smooth functions of distance to two centres, so the same problem applies: the centres don't depend on colour.",
 md_db:"Points outside the largest density-connected cluster are labelled red. On the original data a small eps makes everything noise (= all red = 0.239, the notebook's “best” setting). On the distinct data the ring is denser, but DBSCAN treats the sparse background as the outlier, so this rule rarely isolates it.",
 md_kdd:"Score = minus the distance to the k-th nearest neighbour, so <b>dense spots count as red</b>. This is the right direction for the distinct data, where the ring is about 3.7× denser than the background (F1 ≈ 0.62 without labels). On the original data it is useless, because there red is the <i>sparse</i> class.",
@@ -595,6 +603,13 @@ md_base:"Все точки помечаются красными. Это ниж�
 md_km:"K-Means делит плоскость одной прямой между двумя центроидами. Центр у классов общий (на различимых данных кольцо стоит в центре облака), поэтому разрез чисто геометрический, и в каждой половине примерно одинаковая доля красных. Соответствие «кластер → цвет» выбирается по меткам, как в ноутбуке.",
 md_gmm:"Главная рекомендация README. EM подгоняет две гауссианы с полной ковариацией. Ни исходное облако, ни кольцо не являются «двумя облаками», поэтому модель находит две половины пространства. Эллипсы — 1σ и 2σ. Кривая F1 остаётся около случайной линии.",
 md_ring:"EM для смеси <b>зашумлённой окружности и равномерного фона</b> на области данных — та же модель, по которой создан различимый датасет. Метки не используются. Грубый перебор по сетке выбирает начальную точку, затем на каждом шаге окружность переподгоняется взвешенным МНК (метод Касы) и обновляются R, σ и доля красных. Нарисованы найденная окружность и полоса ±2σ. На исходных данных кольца нет, и модель цепляется за шум.",
+mn_sfz:"Структурная нечёткая кластеризация",ms_sfz:"Нечёткие множества по разреженности, плотности и длине цепочки вместо X, Y.",
+md_sfz:"<b>Нечёткая кластеризация по структуре, а не по положению.</b> Каждой точке даются четыре признака без меток: расстояние до 5-го и 15-го соседа, размер её цепочки (компонента связности графа с k = 2) и вытянутость окрестности. Каждый из двух кластеров строит свою <b>функцию принадлежности</b> по каждому признаку из своего нечётко-взвешенного распределения (гауссова, асимметричный треугольник, трапеция, колокол или само сглаженное распределение) и уточняет её на каждой итерации. Веса признаков подбираются без меток по тому, насколько кластеры разделяются по признаку. <i>Ширина множеств</i> растягивает все множества, <i>m</i> — параметр размытости FCM, <i>β</i> заостряет веса признаков (0 = равные). Красные = меньший кластер. Python: <code>fuzzy_structural.py</code>. Замечание: ширина по умолчанию выбрана по F1, поэтому метод не полностью без меток.",
+note_sfz:"веса признаков: {w} · красный кластер {pi} · принадлежность > 0,5 отмечает {q} (F1 {f})",
+p_shape:"Форма функции принадлежности",p_width:"Ширина множеств",p_beta:"β весов признаков",
+sh_gaussian:"гауссова",sh_triangular:"треугольник",sh_trapezoid:"трапеция",sh_bell:"колокол",sh_empirical:"эмпирическая (гистограмма)",
+fz_sparse:"разреженность",fz_density:"плотность",fz_chain:"цепочка",fz_linear:"вытянутость",
+repo_fz:"Структурная нечёткая кластеризация: функции принадлежности кластеров (гауссова, треугольник, трапеция, колокол, эмпирическая), построенные по нечётко-взвешенным распределениям разреженности, плотности, длины цепочки и вытянутости, с весами признаков без меток. Исходные 0,43, кольцо 0,49, цепочки и окружности 1,000. <code>--sweep</code> печатает таблицу форма × ширина × m.",
 md_fcm:"Мягкий K-Means, перенесённый из NumPy-версии ноутбука. Степени принадлежности — гладкие функции расстояния до двух центров, поэтому проблема та же: центры не зависят от цвета.",
 md_db:"Точки вне самого большого связного по плотности кластера считаются красными. На исходных данных при маленьком eps всё становится шумом (= все красные = 0,239, «лучшая» настройка ноутбука). На различимых данных кольцо плотнее, но DBSCAN считает выбросом разреженный фон, поэтому это правило редко выделяет кольцо.",
 md_kdd:"Оценка = минус расстояние до k-го ближайшего соседа, то есть <b>плотные места считаются красными</b>. Это правильное направление для различимых данных: кольцо примерно в 3,7 раза плотнее фона (F1 ≈ 0,62 без меток). На исходных данных оценка бесполезна, потому что там красный — <i>разреженный</i> класс.",
@@ -775,6 +790,69 @@ function fcm(m,seed){const R=rng(seed);const U=[new Float64Array(N),new Float64A
       const u0=1/(1+(d0/d1)**e);dmax=Math.max(dmax,Math.abs(u0-U[0][i]));U[0][i]=u0;U[1][i]=1-u0}
     if(dmax<1e-5)break}
   return{U,C}}
+// Structural fuzzy clustering (port of fuzzy_structural.py). Features: log d5 (sparse), log d15 (density), log chain size in the k=2 graph, neighbourhood anisotropy;
+// each cluster fits its own membership function per feature to its fuzzy-weighted distribution, re-fitted every iteration.
+const SFZ_SHAPES=["gaussian","triangular","trapezoid","bell","empirical"],SFZ_FEAT=["sparse","density","chain","linear"];
+function sfzFeatures(){const D=DATASETS[DS];if(D.sfzF)return D.sfzF;
+  // neighbours in raw pixels (isotropic, as in Python), not in the per-axis standardised space used elsewhere
+  const KK=15,PI_=new Int32Array(N*KK),PD=new Float64Array(N*KK),bi=new Int32Array(KK),bd=new Float64Array(KK);
+  for(let i=0;i<N;i++){bi.fill(-1);bd.fill(Infinity);for(let j=0;j<N;j++){if(j===i)continue;const v=(RX[i]-RX[j])**2+(RY[i]-RY[j])**2;
+      if(v<bd[KK-1]){let p=KK-1;while(p>0&&bd[p-1]>v){bd[p]=bd[p-1];bi[p]=bi[p-1];p--}bd[p]=v;bi[p]=j}}
+    for(let k=0;k<KK;k++){PI_[i*KK+k]=bi[k];PD[i*KK+k]=Math.sqrt(bd[k])}}
+  const nb=Array.from({length:N},()=>[]);for(let i=0;i<N;i++)for(let t=0;t<2;t++){const j=PI_[i*KK+t];nb[i].push(j);nb[j].push(i)}
+  const lab=new Int32Array(N).fill(-1),size=[];for(let i=0;i<N;i++){if(lab[i]>=0)continue;const q=[i];lab[i]=size.length;for(let h=0;h<q.length;h++)for(const j of nb[q[h]])if(lab[j]<0){lab[j]=size.length;q.push(j)}size.push(q.length)}
+  const F=[new Float64Array(N),new Float64Array(N),new Float64Array(N),new Float64Array(N)];
+  for(let i=0;i<N;i++){F[0][i]=Math.log(PD[i*KK+4]+1e-12);F[1][i]=Math.log(PD[i*KK+14]+1e-12);F[2][i]=Math.log(size[lab[i]]);
+    let ax=RX[i],ay=RY[i];for(let t=0;t<8;t++){const j=PI_[i*KK+t];ax+=RX[j];ay+=RY[j]}ax/=9;ay/=9;let a=0,b=0,c=0;
+    for(let t=-1;t<8;t++){const j=t<0?i:PI_[i*KK+t],dx=RX[j]-ax,dy=RY[j]-ay;a+=dx*dx;b+=dx*dy;c+=dy*dy}
+    const h=(a+c)/2,r=Math.sqrt(Math.max(h*h-(a*c-b*b),0));F[3][i]=1-(h-r)/(h+r+1e-12)}
+  const pc=(s,q)=>{const t=q*(N-1),k=Math.floor(t);return k+1<N?s[k]+(s[k+1]-s[k])*(t-k):s[k]};   // np.percentile (linear)
+  return D.sfzF=F.map(f=>{const s=Float64Array.from(f).sort(),md=pc(s,.5),iqr=pc(s,.75)-pc(s,.25),sd=std(Array.from(f))+1e-12;return f.map(v=>(v-md)/(iqr>1e-12?iqr:sd))})}
+function sfz(shape,width,m,beta,seed=1){const F=sfzFeatures(),P=F.length,K=2,E=1e-12,FLOOR=1e-3,MS=.25,ALPHA=.05,PLAT=.5,SLOPE=2;
+  const ORD=F.map(f=>Int32Array.from({length:N},(_,i)=>i).sort((a,b)=>f[a]-f[b]));
+  const wq=(p,w,S,q)=>{const f=F[p],o=ORD[p];let c=0,pc=0,px=f[o[0]];   // weighted quantile, same rule as weighted_quantile() in Python
+    for(let t=0;t<N;t++){const i=o[t],ct=(c+.5*w[i])/S;c+=w[i];if(ct>=q)return t===0?f[i]:px+(f[i]-px)*(q-pc)/((ct-pc)||1);pc=ct;px=f[i]}return px};
+  const fitMF=(p,w)=>{const f=F[p];let S=0,a=0;for(let i=0;i<N;i++){S+=w[i];a+=w[i]*f[i]}const c=a/S;let v=0;for(let i=0;i<N;i++)v+=w[i]*(f[i]-c)**2;
+    const raw=Math.sqrt(v/S)+E,mf={c,raw,s:Math.max(raw,MS)};
+    if(shape===1||shape===2){const md=wq(p,w,S,.5),lo=wq(p,w,S,ALPHA),hi=wq(p,w,S,1-ALPHA);mf.a=md-width*Math.max(md-lo,MS);mf.d=md+width*Math.max(hi-md,MS);
+      if(shape===1)mf.b=mf.cc=md;else{mf.b=wq(p,w,S,.5-PLAT/2);mf.cc=wq(p,w,S,.5+PLAT/2)}}
+    else if(shape===4){const o=ORD[p],G=256,g0=f[o[0]]-3*mf.s,st=(f[o[N-1]]+3*mf.s-g0)/(G-1);let w2=0;for(let i=0;i<N;i++)w2+=w[i]*w[i];
+      const h=width*1.06*mf.s*(S*S/w2)**-.2,sg=h/st,R=Math.min(G,Math.ceil(4*sg)),hist=new Float64Array(G),cur=new Float64Array(G);
+      for(let i=0;i<N;i++){const b=Math.round((f[i]-g0)/st);if(b>=0&&b<G)hist[b]+=w[i]}
+      let mx=E;for(let g=0;g<G;g++){let a2=0;for(let r=-R;r<=R;r++){const q=g+r;if(q>=0&&q<G)a2+=hist[q]*Math.exp(-.5*(r/sg)**2)}cur[g]=a2;if(a2>mx)mx=a2}
+      for(let g=0;g<G;g++)cur[g]/=mx;Object.assign(mf,{g0,st,G,cur})}
+    return mf};
+  const mu=(mf,x)=>{let v;
+    if(shape===0)v=Math.exp(-.5*((x-mf.c)/(width*mf.s))**2);
+    else if(shape===3)v=1/(1+Math.abs((x-mf.c)/(width*mf.s))**(2*SLOPE));
+    else if(shape===4){const t=(x-mf.g0)/mf.st;if(t<0||t>mf.G-1)v=0;else{const i=Math.floor(t),fr=t-i;v=i+1<mf.G?mf.cur[i]*(1-fr)+mf.cur[i+1]*fr:mf.cur[i]}}
+    else{const l=(x-mf.a)/Math.max(mf.b-mf.a,E),r=(mf.d-x)/Math.max(mf.d-mf.cc,E);v=Math.min(Math.max(Math.min(l,r,1),0),1)}
+    return Math.max(v,FLOOR)};
+  const mstep=U=>{const W=U.map(u=>u.map(v=>v**m)),mfs=W.map(w=>F.map((_,p)=>fitMF(p,w))),prior=U.map(u=>{let s=0;for(const v of u)s+=v;return s/N});
+    const sep=F.map((_,p)=>Math.abs(mfs[0][p].c-mfs[1][p].c)/2/((mfs[0][p].raw+mfs[1][p].raw)/2+E)),w=sep.map(v=>(v+E)**beta),sw=w.reduce((a,b)=>a+b,0);
+    return{mfs,prior,fw:w.map(v=>P*v/sw)}};
+  const partition=st=>{const U=[new Float64Array(N),new Float64Array(N)];
+    for(let i=0;i<N;i++){const z=[0,0];for(let k=0;k<K;k++){let L=0;for(let p=0;p<P;p++)L+=st.fw[p]*Math.log(mu(st.mfs[k][p],F[p][i]));z[k]=Math.log(st.prior[k]*Math.exp(L)+E)/(m-1)}
+      const M=Math.max(z[0],z[1]),a=Math.exp(z[0]-M),b=Math.exp(z[1]-M);U[0][i]=a/(a+b);U[1][i]=b/(a+b)}return U};
+  const objective=st=>{const Z=st.mfs.map(row=>row.map((mf,p)=>{const o=ORD[p],lo=F[p][o[0]]-1,hi=F[p][o[N-1]]+1,G=1000,dx=(hi-lo)/(G-1);let s=0;
+      for(let g=0;g<G;g++){const v=mu(mf,lo+g*dx);s+=(g===0||g===G-1)?v/2:v}return s*dx}));
+    let L=0;for(let i=0;i<N;i++){const l=[0,1].map(k=>{let a=Math.log(st.prior[k]+E);for(let p=0;p<P;p++)a+=Math.log(mu(st.mfs[k][p],F[p][i])/Z[k][p]+E);return a});
+      const M=Math.max(...l);L+=M+Math.log(Math.exp(l[0]-M)+Math.exp(l[1]-M))}return L};
+  // starts: one 1-D split per feature (any single cue can seed the model) + 3 random-restart FCM runs on all features
+  const starts=F.map((f,p)=>{const s=ORD[p].map(i=>f[i]),pc=q=>{const t=q*(N-1),k=Math.floor(t);return s[k]+(s[Math.min(k+1,N-1)]-s[k])*(t-k)};
+    let lo=pc(.15),hi=pc(.85);for(let it=0;it<50;it++){const thr=(lo+hi)/2;let a=0,na=0,b=0,nb=0;for(const v of f){if(v<=thr){a+=v;na++}else{b+=v;nb++}}if(!na||!nb)break;lo=a/na;hi=b/nb}
+    const sc=std(Array.from(f))*.25+E,thr=(lo+hi)/2,u1=f.map(v=>1/(1+Math.exp(-(v-thr)/sc)));return[u1.map(v=>1-v),u1]});
+  const R=rng(seed);
+  for(let r=0;r<3;r++){let U=[new Float64Array(N),new Float64Array(N)];for(let i=0;i<N;i++){const a=R();U[0][i]=a;U[1][i]=1-a}
+    for(let it=0;it<100;it++){const C=[0,1].map(k=>{let sw=0;const c=new Float64Array(P);for(let i=0;i<N;i++){const w=U[k][i]**2;sw+=w;for(let p=0;p<P;p++)c[p]+=w*F[p][i]}return c.map(v=>v/sw)});
+      let dmax=0;for(let i=0;i<N;i++){const d=C.map(c=>{let s=0;for(let p=0;p<P;p++)s+=(F[p][i]-c[p])**2;return Math.sqrt(s)+E}),u0=d[1]**2/(d[0]**2+d[1]**2);dmax=Math.max(dmax,Math.abs(u0-U[0][i]));U[0][i]=u0;U[1][i]=1-u0}
+      if(dmax<1e-6)break}
+    starts.push(U)}
+  let best=null;
+  for(let U of starts){let st=mstep(U);for(let it=0;it<200;it++){const nu=partition(st);let ch=0;for(let i=0;i<N;i++)ch=Math.max(ch,Math.abs(nu[0][i]-U[0][i]));U=nu;st=mstep(U);if(ch<1e-5)break}
+    const L=objective(st);if(!best||L>best.L)best={L,U,st}}
+  const s0=best.U[0].reduce((a,b)=>a+b,0),red=s0<N/2?0:1;
+  return{score:best.U[red],fw:best.st.fw,pi:best.st.prior[red]}}
 function dbscan(eps,minPts,AX=ZX,AY=ZY){const lab=new Int32Array(N).fill(-2),e2=eps*eps;
   const region=i=>{const o=[];for(let j=0;j<N;j++){const dx=AX[i]-AX[j],dy=AY[i]-AY[j];if(dx*dx+dy*dy<=e2)o.push(j)}return o};
   let c=0;for(let i=0;i<N;i++){if(lab[i]!==-2)continue;const nb=region(i);if(nb.length<minPts){lab[i]=-1;continue}
@@ -1008,6 +1086,10 @@ const METHODS=[
     return{score:g.r,ring:{cx:g.cx*sx+mx,cy:g.cy*sy+my,R:g.R*s0,s:g.s*s0},noteK:"note_ring",noteV:{cx:Math.round(g.cx*sx+mx),cy:Math.round(g.cy*sy+my),R:Math.round(g.R*s0),s:num(g.s*s0,1),pi:num(g.pi,3)}}}},
  {id:"gu",grp:"g_glob",type:"score",params:[],run:()=>{const g=gaussUniform();return{score:g.r,gmm:{mu:[g.mu],S:[g.S]},redComp:0}}},
  {id:"fcm",grp:"g_glob",type:"score",params:[{k:"m",l:"p_m",min:1.2,max:3,step:.1,v:2},{k:"seed",l:"p_seed",min:1,max:20,v:1}],run:p=>{const r=fcm(p.m,p.seed);const k=curve(r.U[0]).ap>=curve(r.U[1]).ap?0:1;return{score:r.U[k],centers:r.C}}},
+ {id:"sfz",grp:"g_glob",type:"score",params:[{k:"shape",l:"p_shape",min:0,max:4,v:1,names:SFZ_SHAPES.map(s=>"sh_"+s)},{k:"width",l:"p_width",min:.5,max:3,step:.1,v:1.5},{k:"m",l:"p_m",min:1.2,max:3,step:.1,v:2},{k:"beta",l:"p_beta",min:0,max:4,step:.5,v:2}],
+  run:p=>{const r=sfz(p.shape,p.width,p.m,p.beta),hard=Uint8Array.from(r.score,v=>v>.5?1:0),c=confusion(hard);
+    // getters: the result is cached, so the note is formatted in the language active when it is shown
+    return{score:r.score,noteK:"note_sfz",noteV:{get w(){return SFZ_FEAT.map((f,i)=>T("fz_"+f)+" "+num(r.fw[i],2)).join(" · ")},get pi(){return pct(r.pi)},get q(){return pct(c.q)},get f(){return num(c.f,3)}}}}},
  {id:"db",grp:"g_dens",type:"hard",params:[{k:"eps",l:"p_eps",min:.02,max:.4,step:.01,v:.08},{k:"minPts",l:"p_minpts",min:2,max:20,v:5}],
   run:p=>{const r=dbscan(p.eps,p.minPts);const sz={};for(const l of r.lab)if(l>=0)sz[l]=(sz[l]||0)+1;let big=-1,bs=0;for(const k in sz)if(sz[k]>bs){bs=sz[k];big=+k}
     return{pred:Uint8Array.from(r.lab,l=>l===big?0:1),noteK:"note_db",noteV:{nc:r.nc,noise:r.lab.filter(l=>l<0).length}}}},
@@ -1032,7 +1114,7 @@ const METHODS=[
  {id:"sgc",grp:"g_gnn",type:"score",sup:true,params:[{k:"k",l:"k",min:3,max:30,v:10},{k:"K",l:"p_hops",min:0,max:6,v:2},{k:"logC",l:"p_logc",min:-2,max:6,step:.5,v:4}],run:p=>({score:sgcCV(p.k,p.K,p.logC),edges:p.k})}
 ];
 // unsupervised first, then supervised; groups stay contiguous
-const ORDER=["base","km","gmm","ring","gu","fcm","db","kdd","kd","lnnd","lof","tsnek","gcomp","gdens","gspec","bayes","lr","qda","sup","glp","sgc","hgcn","tsne"];
+const ORDER=["base","km","gmm","ring","gu","fcm","sfz","db","kdd","kd","lnnd","lof","tsnek","gcomp","gdens","gspec","bayes","lr","qda","sup","glp","sgc","hgcn","tsne"];
 METHODS.sort((a,b)=>ORDER.indexOf(a.id)-ORDER.indexOf(b.id));
 const caseOf=m=>m.sup?"sup":"unsup";
 function avail(m,ds){if(m.only&&!m.only.includes(ds))return false;if(m.id==="bayes"&&ds==="custom"&&DATASETS.custom&&isChains(DATASETS.custom.params))return false;return true}
@@ -1059,9 +1141,9 @@ function renderMethods(){const cur=METHODS.find(x=>x.id===state.m),cs=caseOf(cur
   METHODS.forEach(m=>{const k=DS+m.id+JSON.stringify(state.params[m.id]);if(cache[k]){const el=document.getElementById("mf_"+m.id);if(el)el.textContent=f3(bestF1(m.id))}})}
 function renderControls(){const m=METHODS.find(x=>x.id===state.m),c=document.getElementById("controls");c.innerHTML="";
   m.params.forEach(p=>{const d=document.createElement("div");d.className="ctl";const v=state.params[m.id][p.k];
-    d.innerHTML=`<label>${T(p.l)} <b>${v}</b></label><input type="range" min="${p.min}" max="${p.max}" step="${p.step||1}" value="${v}">`;
+    d.innerHTML=`<label>${T(p.l)} <b>${p.names?T(p.names[v]):v}</b></label><input type="range" min="${p.min}" max="${p.max}" step="${p.step||1}" value="${v}">`;
     const inp=d.querySelector("input"),lb=d.querySelector("b");let tmr;
-    inp.oninput=()=>{const val=+inp.value;lb.textContent=val;state.params[m.id][p.k]=val;if(p.k==="perp"){state.params.tsne.perp=state.params.tsnek.perp=val}clearTimeout(tmr);busy(true);tmr=setTimeout(()=>{update();renderMethods()},m.id==="db"||m.id==="tsne"||m.id==="tsnek"?150:30)};
+    inp.oninput=()=>{const val=+inp.value;lb.textContent=p.names?T(p.names[val]):val;state.params[m.id][p.k]=val;if(p.k==="perp"){state.params.tsne.perp=state.params.tsnek.perp=val}clearTimeout(tmr);busy(true);tmr=setTimeout(()=>{update();renderMethods()},m.id==="db"||m.id==="tsne"||m.id==="tsnek"||m.id==="sfz"?150:30)};
     c.appendChild(d)});
   if(m.type==="score"){const d=document.createElement("div");d.className="ctl";d.innerHTML=`<label>${T("flag_top")} <b id="fracLbl"></b></label><input id="fracSl" type="range" min="0.005" max="1" step="0.005" value="${state.frac}">`;
     c.appendChild(d);d.querySelector("input").oninput=e=>{state.frac=+e.target.value;update(true)};

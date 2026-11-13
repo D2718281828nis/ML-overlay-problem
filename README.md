@@ -86,7 +86,7 @@ The lab and the designer are synchronised:
 | Group | Methods |
 |---|---|
 | Reference | all-red baseline |
-| Global clustering | K-Means, 2-component GMM, **ring + uniform mixture (EM)**, Gaussian + uniform mixture (EM), Fuzzy C-Means |
+| Global clustering | K-Means, 2-component GMM, **ring + uniform mixture (EM)**, Gaussian + uniform mixture (EM), Fuzzy C-Means, **structural fuzzy clustering** |
 | Density | DBSCAN, k-NN density, k-NN sparsity, LNND, LOF |
 | Embedding | t-SNE + k-NN density |
 | Graphs | **connected components** of a small-k k-NN graph, k-NN graph with GCN-style smoothed density, spectral cut of the graph |
@@ -180,6 +180,7 @@ Illustrated step by step, with seven figures: **[illustrations/README.md](illust
 | `quickstart_colab.py` | Copy-paste Colab template: GMM + threshold search. The threshold is tuned on true labels, so it is supervised. |
 | `make_distinct_dataset.py` | Generator for datasets with chosen red and green distributions |
 | `hyperbolic_gcn.py` | NumPy hyperbolic GCN (`HyperbolicGCN` from ML-MachineLearning-Graphs, Poincaré ball), used as method 9g of `overlay_clustering_advanced.py` |
+| `fuzzy_structural.py` | Structural fuzzy clustering: each cluster fits its own membership function (Gaussian, asymmetric triangle, trapezoid, bell or empirical) to its fuzzy-weighted distribution of sparsity, density, chain size and anisotropy, with label-free feature weights. `--sweep` prints shape × width × m, `--plot` draws the learned sets |
 | `illustrations/` | Seven figures and an EN/RU explanation of why the graph method wins on the chain datasets (`make_illustrations.py` regenerates them) |
 | `df_red_green_overlay.csv`, `df_red_green_distinct.csv`, `df_red_green_chains.csv`, `df_red_green_circles.csv` | Datasets |
 
@@ -215,6 +216,7 @@ How the project got here, step by step. All numbers are F1 for the red class.
 | 12 | An example where graphs win: chains (random walks) | Connected components 1.000; every other unsupervised method ≤ 0.25; supervised k-NN 0.83. |
 | 13 | The same with circles | Connected components 1.000 on every seed, but small circles leak a local signal: k-NN sparsity 0.47–0.81, supervised k-NN ≈ 1.0. |
 | 14 | Hyperbolic GCN from ML-MachineLearning-Graphs (`HyperbolicGCN`: Poincaré-ball lift, tangent-space GCN) | The repository's notebook ran it on the original data without class weights and found no red point (recall 0). With a class-balanced loss and 5-fold CV: original 0.40, ring 0.68–0.76 (depends on curvature c), walk chains 0.75. In this architecture logmap0(expmap0(v)) = v except where the ball's edge clips v, so the curvature only bounds the hidden-vector length (c → 0 is a plain GCN). |
+| 15 | Structural fuzzy clustering (`fuzzy_structural.py`, also in the lab) | Fuzzy sets on structural features instead of (X, Y), one learned membership function per cluster and feature, label-free feature weights. Triangle sets, width 1.5: original 0.43, ring 0.49, chains and circles 1.000 (FCM on X, Y: 0.17–0.23). Caveats: the width was chosen by looking at F1; on other ring seeds the run selection sometimes picks a spurious chain-size split (F1 0.10–0.62). |
 
 ### Lessons
 
@@ -306,7 +308,7 @@ python make_distinct_dataset.py --help        # все параметры
 | Группа | Методы |
 |---|---|
 | Эталон | все красные (базовый уровень) |
-| Глобальная кластеризация | K-Means, GMM из 2 компонент, **смесь «кольцо + фон» (EM)**, смесь «гаусс + фон» (EM), Fuzzy C-Means |
+| Глобальная кластеризация | K-Means, GMM из 2 компонент, **смесь «кольцо + фон» (EM)**, смесь «гаусс + фон» (EM), Fuzzy C-Means, **структурная нечёткая кластеризация** |
 | Плотность | DBSCAN, плотность k-NN, разреженность k-NN, LNND, LOF |
 | Вложение | t-SNE + плотность k-NN |
 | Графы | **компоненты связности** графа k-NN с малым k, граф k-NN со сглаженной (как в GCN) плотностью, спектральный разрез графа |
@@ -400,6 +402,7 @@ python make_distinct_dataset.py --help        # все параметры
 | `quickstart_colab.py` | Шаблон для Colab: GMM + подбор порога. Порог подбирается по истинным меткам, то есть это уже обучение с учителем. |
 | `make_distinct_dataset.py` | Генератор датасетов с выбранными распределениями красных и зелёных |
 | `hyperbolic_gcn.py` | Гиперболическая GCN на NumPy (`HyperbolicGCN` из ML-MachineLearning-Graphs, шар Пуанкаре), метод 9g в `overlay_clustering_advanced.py` |
+| `fuzzy_structural.py` | Структурная нечёткая кластеризация: каждый кластер строит свою функцию принадлежности (гауссова, асимметричный треугольник, трапеция, колокол или эмпирическая) по нечётко-взвешенному распределению разреженности, плотности, длины цепочки и вытянутости, с весами признаков без меток. `--sweep` печатает таблицу форма × ширина × m, `--plot` рисует найденные множества |
 | `illustrations/` | Семь рисунков и объяснение на EN/RU, почему метод на графе побеждает на датасетах с цепочками (`make_illustrations.py` пересоздаёт их) |
 | `df_red_green_overlay.csv`, `df_red_green_distinct.csv`, `df_red_green_chains.csv`, `df_red_green_circles.csv` | Датасеты |
 
@@ -435,6 +438,7 @@ OVERLAY_DATA=my_data.csv python overlay_advanced_tuning.py
 | 12 | Пример, где побеждают графы: цепочки (случайные блуждания) | Компоненты связности 1,000; все остальные методы без учителя ≤ 0,25; k-NN с учителем 0,83. |
 | 13 | То же с окружностями | Компоненты связности 1,000 на всех зёрнах, но маленькие окружности дают локальный сигнал: разреженность k-NN 0,47–0,81, k-NN с учителем ≈ 1,0. |
 | 14 | Гиперболическая GCN из ML-MachineLearning-Graphs (`HyperbolicGCN`: подъём в шар Пуанкаре, GCN в касательном пространстве) | Ноутбук того репозитория запускал её на исходных данных без весов классов и не нашёл ни одной красной точки (полнота 0). Со сбалансированной функцией потерь и 5-кратной CV: исходный датасет 0,40, кольцо 0,68–0,76 (зависит от кривизны c), цепочки-блуждания 0,75. В этой архитектуре logmap0(expmap0(v)) = v везде, кроме мест, где край шара обрезает v, поэтому кривизна лишь ограничивает длину скрытых векторов (c → 0 — обычная GCN). |
+| 15 | Структурная нечёткая кластеризация (`fuzzy_structural.py`, есть в лаборатории) | Нечёткие множества на структурных признаках вместо (X, Y), своя функция принадлежности для каждого кластера и признака, веса признаков без меток. Треугольники, ширина 1,5: исходные 0,43, кольцо 0,49, цепочки и окружности 1,000 (FCM по X, Y: 0,17–0,23). Оговорки: ширина выбрана по F1; на других зёрнах кольца выбор запуска иногда берёт ложное разбиение по длине цепочки (F1 0,10–0,62). |
 
 ### Уроки
 
